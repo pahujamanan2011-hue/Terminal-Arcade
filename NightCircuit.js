@@ -110,8 +110,8 @@ function saveHi() {
    PLAYER
 --------------------------------------------------------- */
 
-var CAR_W  = 38;
-var CAR_H  = 52;
+var CAR_W  = 52;
+var CAR_H  = 64;
 
 var playerX;   /* centre x of player car */
 var playerY;
@@ -138,10 +138,10 @@ for (var ti = 0; ti < MAX_TRAFFIC; ti++) {
 }
 
 var TRAFFIC_TYPES = [
-    { w:34, h:44, col:"#aaa" },  /* small car    */
-    { w:40, h:56, col:"#888" },  /* sedan        */
-    { w:46, h:64, col:"#777" },  /* SUV          */
-    { w:52, h:72, col:"#999" }   /* truck        */
+    { w:58, h:44, col:"#aaa" },  /* small car – fills 55% of lane */
+    { w:66, h:56, col:"#888" },  /* sedan                         */
+    { w:74, h:64, col:"#777" },  /* SUV                           */
+    { w:82, h:72, col:"#999" }   /* truck – nearly full lane      */
 ];
 
 /* ---------------------------------------------------------
@@ -183,7 +183,7 @@ var nitroBlink = 0;
 
 var nitroActive = false;
 var nitroTicks  = 0;
-var NITRO_EFFECT = 300;    /* 10 seconds at 30fps */
+var NITRO_EFFECT = 450;    /* 15 seconds at 30fps */
 var nitroMsgTimer = 0;
 var baseSpeed   = 2.5;     /* speed without any boost — updated on level-up only */
 
@@ -280,6 +280,23 @@ function countActiveTraffic() {
         if (traffic[i].alive && traffic[i].y < H * 0.5) n++;
     }
     return n;
+}
+
+/* Returns true if no pickup or traffic car occupies the given lane */
+function laneIsClearForPickup(lane) {
+    var lx = ROAD_X + lane * LANE_W;
+    var lr = lx + LANE_W;
+    /* Check other pickups */
+    if (nitro.alive && nitro.x + 14 > lx && nitro.x < lr) return false;
+    if (coin.alive  && coin.x  + 12 > lx && coin.x  < lr) return false;
+    if (turbo.alive && turbo.x + 16 > lx && turbo.x < lr) return false;
+    /* Check traffic in top portion */
+    for (var i = 0; i < MAX_TRAFFIC; i++) {
+        var t = traffic[i];
+        if (!t.alive || t.y > H * 0.6) continue;
+        if (t.x + t.w > lx && t.x < lr) return false;
+    }
+    return true;
 }
 
 function spawnTraffic(forceLane) {
@@ -524,12 +541,19 @@ function update() {
     /* --- NITRO SPAWN --- */
     nitroSpawnClock++;
     if (nitroSpawnClock >= NITRO_SPAWN_EVERY && !nitro.alive && !nitroActive) {
-        nitroSpawnClock = 0;
-        var nl = (Math.random() * LANES) | 0;
-        nitro.x = ROAD_X + nl * LANE_W + (LANE_W - 14) / 2;
-        nitro.y = -20;
-        nitro.alive = true;
-        nitroBlink  = 0;
+        /* Find a clear lane – try up to LANES times */
+        var nl = -1;
+        for (var nlt = 0; nlt < LANES; nlt++) {
+            var nlc = ((Math.random() * LANES) | 0);
+            if (laneIsClearForPickup(nlc)) { nl = nlc; break; }
+        }
+        if (nl >= 0) {
+            nitroSpawnClock = 0;
+            nitro.x = ROAD_X + nl * LANE_W + (LANE_W - 14) / 2;
+            nitro.y = -20;
+            nitro.alive = true;
+            nitroBlink  = 0;
+        }
     }
 
     /* --- NITRO MOVE + COLLECT --- */
@@ -562,12 +586,18 @@ function update() {
     /* --- COIN SPAWN + MOVE + COLLECT --- */
     coinSpawnClock++;
     if (coinSpawnClock >= COIN_SPAWN_EVERY && !coin.alive) {
-        coinSpawnClock = 0;
-        var cl = (Math.random() * LANES) | 0;
-        coin.x = ROAD_X + cl * LANE_W + (LANE_W - 12) / 2;
-        coin.y = -16;
-        coin.alive = true;
-        coinBlink  = 0;
+        var cl = -1;
+        for (var clt = 0; clt < LANES; clt++) {
+            var clc = ((Math.random() * LANES) | 0);
+            if (laneIsClearForPickup(clc)) { cl = clc; break; }
+        }
+        if (cl >= 0) {
+            coinSpawnClock = 0;
+            coin.x = ROAD_X + cl * LANE_W + (LANE_W - 12) / 2;
+            coin.y = -16;
+            coin.alive = true;
+            coinBlink  = 0;
+        }
     }
     if (coin.alive) {
         coin.y += gameSpeed * 1.1;
@@ -586,12 +616,18 @@ function update() {
     /* --- TURBO SPAWN + MOVE + COLLECT --- */
     turboSpawnClock++;
     if (turboSpawnClock >= TURBO_SPAWN_EVERY && !turbo.alive && !turboActive) {
-        turboSpawnClock = 0;
-        var tl2 = (Math.random() * LANES) | 0;
-        turbo.x = ROAD_X + tl2 * LANE_W + (LANE_W - 16) / 2;
-        turbo.y = -24;
-        turbo.alive = true;
-        turboBlink  = 0;
+        var tl2 = -1;
+        for (var tlt = 0; tlt < LANES; tlt++) {
+            var tlc = ((Math.random() * LANES) | 0);
+            if (laneIsClearForPickup(tlc)) { tl2 = tlc; break; }
+        }
+        if (tl2 >= 0) {
+            turboSpawnClock = 0;
+            turbo.x = ROAD_X + tl2 * LANE_W + (LANE_W - 16) / 2;
+            turbo.y = -24;
+            turbo.alive = true;
+            turboBlink  = 0;
+        }
     }
     if (turbo.alive) {
         turbo.y += gameSpeed * 1.1;
@@ -726,60 +762,90 @@ function fillBtn(x, y, w, h, label, active) {
     ctx.fillText(label, x + ((w - tw) >> 1), y + h - 7);
 }
 
-/* Draw player car – improved pixel art */
+/* Draw player car – vibrant, wide, distinctive */
 function drawPlayerCar(cx, cy) {
-    /* Skip draw every other frame when turbo blinking */
+    /* Blink every 4 ticks when turbo active */
     if (turboActive && turboBlinkState >= 4) return;
 
     var x = (cx - CAR_W/2) | 0;
     var y = cy | 0;
-    var col = turboActive ? "#88ffff" : (nitroActive ? "#aaffaa" : "#eee");
 
-    /* Main body – centre column */
-    ctx.fillStyle = col;
-    ctx.fillRect(x + 6,  y + 2,   CAR_W - 12, CAR_H - 2);
-    /* Wide middle section */
-    ctx.fillRect(x + 2,  y + 14,  CAR_W - 4,  CAR_H - 32);
-    /* Roof */
-    ctx.fillRect(x + 8,  y + 2,   CAR_W - 16, 14);
+    /* Base colour: bright orange-red normally,
+       green tint for nitro, cyan for turbo */
+    var bodyCol  = turboActive ? "#00ddee" :
+                   nitroActive ? "#00ee66" : "#ff4400";
+    var darkCol  = turboActive ? "#004455" :
+                   nitroActive ? "#004422" : "#882200";
+    var trimCol  = turboActive ? "#88ffff" :
+                   nitroActive ? "#88ffaa" : "#ff8833";
 
-    /* Windscreen */
-    ctx.fillStyle = turboActive ? "#003344" : "#222";
-    ctx.fillRect(x + 9,  y + 4,   CAR_W - 18, 10);
+    /* ---- BODY ---- */
+    /* Wide centre hull */
+    ctx.fillStyle = bodyCol;
+    ctx.fillRect(x + 4,  y + 8,  CAR_W - 8,  CAR_H - 10);
+    /* Flared fenders – wider than hull */
+    ctx.fillRect(x,      y + 18, CAR_W,       CAR_H - 36);
+    /* Roof – narrower */
+    ctx.fillRect(x + 10, y,      CAR_W - 20,  16);
 
-    /* Side windows */
-    ctx.fillStyle = turboActive ? "#004455" : "#2a2a2a";
-    ctx.fillRect(x + 4,  y + 18,  6,  10);
-    ctx.fillRect(x + CAR_W - 10, y + 18, 6, 10);
+    /* ---- WINDSCREEN ---- */
+    ctx.fillStyle = darkCol;
+    ctx.fillRect(x + 11, y + 2,  CAR_W - 22, 12);
 
-    /* Rear window */
-    ctx.fillStyle = turboActive ? "#003344" : "#333";
-    ctx.fillRect(x + 9,  y + CAR_H - 16, CAR_W - 18, 8);
+    /* ---- SIDE VENTS ---- */
+    ctx.fillStyle = darkCol;
+    ctx.fillRect(x + 2,  y + 22, 6,  8);
+    ctx.fillRect(x + CAR_W - 8, y + 22, 6, 8);
 
-    /* Hood detail lines */
-    ctx.fillStyle = "#555";
-    ctx.fillRect(x + 10, y + CAR_H - 24, 4, 6);
-    ctx.fillRect(x + CAR_W - 14, y + CAR_H - 24, 4, 6);
+    /* ---- HOOD STRIPES ---- */
+    ctx.fillStyle = trimCol;
+    ctx.fillRect(x + (CAR_W>>1) - 3, y + 8,  3, 10);
+    ctx.fillRect(x + (CAR_W>>1) + 1, y + 8,  3, 10);
 
-    /* Headlights – top (we face down, so top = front going away) */
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(x + 4,  y + 2,   8, 5);
-    ctx.fillRect(x + CAR_W - 12, y + 2, 8, 5);
+    /* ---- REAR WINDOW ---- */
+    ctx.fillStyle = darkCol;
+    ctx.fillRect(x + 11, y + CAR_H - 18, CAR_W - 22, 10);
 
-    /* Taillights – bottom = facing player */
-    ctx.fillStyle = turboActive ? "#ff4444" : "#cc2222";
-    ctx.fillRect(x + 4,  y + CAR_H - 7, 8, 5);
-    ctx.fillRect(x + CAR_W - 12, y + CAR_H - 7, 8, 5);
+    /* ---- REAR DIFFUSER ---- */
+    ctx.fillStyle = "#222";
+    ctx.fillRect(x + 4,  y + CAR_H - 6, CAR_W - 8, 6);
+    /* diffuser slots */
+    ctx.fillStyle = darkCol;
+    ctx.fillRect(x + 8,  y + CAR_H - 5, 6, 4);
+    ctx.fillRect(x + 18, y + CAR_H - 5, 6, 4);
+    ctx.fillRect(x + CAR_W - 24, y + CAR_H - 5, 6, 4);
+    ctx.fillRect(x + CAR_W - 14, y + CAR_H - 5, 6, 4);
 
-    /* Exhaust glow under turbo */
+    /* ---- HEADLIGHTS (top = front going away from player) ---- */
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x + 4,  y + 8,  10, 6);
+    ctx.fillRect(x + CAR_W - 14, y + 8, 10, 6);
+    /* Inner bright spot */
+    ctx.fillStyle = "#ffffcc";
+    ctx.fillRect(x + 6,  y + 9,  6, 4);
+    ctx.fillRect(x + CAR_W - 12, y + 9, 6, 4);
+
+    /* ---- TAILLIGHTS (bottom = facing player) ---- */
+    ctx.fillStyle = turboActive ? "#ff2222" : "#dd1100";
+    ctx.fillRect(x + 4,  y + CAR_H - 10, 12, 8);
+    ctx.fillRect(x + CAR_W - 16, y + CAR_H - 10, 12, 8);
+    /* Bright centre strip */
+    ctx.fillStyle = "#ff6644";
+    ctx.fillRect(x + 6,  y + CAR_H - 9, 8, 5);
+    ctx.fillRect(x + CAR_W - 14, y + CAR_H - 9, 8, 5);
+
+    /* ---- EXHAUST FLAMES ---- */
     if (turboActive) {
-        ctx.fillStyle = turboBlinkState < 2 ? "#00cccc" : "#006666";
-        ctx.fillRect(x + 12, y + CAR_H, 5, 4);
-        ctx.fillRect(x + CAR_W - 17, y + CAR_H, 5, 4);
-    } else if (nitroActive) {
-        ctx.fillStyle = "#22aa22";
-        ctx.fillRect(x + 12, y + CAR_H, 4, 3);
+        ctx.fillStyle = turboBlinkState < 2 ? "#00ffff" : "#0088aa";
+        ctx.fillRect(x + 10, y + CAR_H,     8, 6);
+        ctx.fillRect(x + CAR_W - 18, y + CAR_H, 8, 6);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x + 12, y + CAR_H,     4, 3);
         ctx.fillRect(x + CAR_W - 16, y + CAR_H, 4, 3);
+    } else if (nitroActive) {
+        ctx.fillStyle = "#00ff44";
+        ctx.fillRect(x + 10, y + CAR_H,     8, 5);
+        ctx.fillRect(x + CAR_W - 18, y + CAR_H, 8, 5);
     }
 }
 
