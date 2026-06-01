@@ -86,8 +86,16 @@ var PIECES = [
     [[[2,0],[0,1],[1,1],[2,1]], [[1,0],[1,1],[1,2],[2,2]], [[0,1],[1,1],[2,1],[0,2]], [[0,0],[1,0],[1,1],[1,2]]]
 ];
 
-/* All blocks rendered white/lightgray – terminal style */
-var COLORS = ["#ddd","#ddd","#ddd","#bbb","#bbb","#ccc","#ccc"];
+/* Vibrant terminal colours per piece type */
+var COLORS = [
+    "#00ddff",  /* I – cyan     */
+    "#ffdd00",  /* O – yellow   */
+    "#aa44ff",  /* T – purple   */
+    "#00ee44",  /* S – green    */
+    "#ff3333",  /* Z – red      */
+    "#4488ff",  /* J – blue     */
+    "#ff8800"   /* L – orange   */
+];
 
 /* ---------------------------------------------------------
    BOARD
@@ -100,6 +108,7 @@ function makeBoard() {
     for (var r = 0; r < ROWS; r++) {
         board[r] = [];
         for (var c = 0; c < COLS; c++) board[r][c] = 0;
+        /* 0 = empty, 1-7 = piece type+1 (so 0 stays falsy) */
     }
 }
 
@@ -124,6 +133,7 @@ function spawnPiece() {
     if (!valid(piece, 0, 0, 0)) {
         screen = SC_DEAD;
         if (score > hiScore) { hiScore = score; newHi = true; saveHi(); }
+        sndGameOver();
     }
 }
 
@@ -160,7 +170,7 @@ function lockPiece() {
     for (var i = 0; i < cs.length; i++) {
         var c = piece.x + cs[i][0];
         var r = piece.y + cs[i][1];
-        if (r >= 0) board[r][c] = 1;
+        if (r >= 0) board[r][c] = piece.type + 1;  /* store type+1, 0=empty */
     }
     /* Find full rows */
     flashRows = [];
@@ -173,6 +183,7 @@ function lockPiece() {
     }
     if (flashRows.length > 0) {
         flashTick = FLASH_TICKS;
+        sndClear(flashRows.length);
     } else {
         spawnPiece();
     }
@@ -180,11 +191,11 @@ function lockPiece() {
 
 function clearLines() {
     var cleared = flashRows.length;
-    /* Remove rows top-down */
     for (var i = 0; i < cleared; i++) {
         board.splice(flashRows[i] - i, 1);
-        board.unshift([]);
-        for (var c = 0; c < COLS; c++) board[0][c] = 0;
+        var emptyRow = [];
+        for (var c = 0; c < COLS; c++) emptyRow[c] = 0;
+        board.unshift(emptyRow);
     }
     flashRows = [];
     lines += cleared;
@@ -244,6 +255,51 @@ function vibrate(ms) {
 }
 
 /* ---------------------------------------------------------
+   AUDIO – tiny Web Audio synth, no files
+--------------------------------------------------------- */
+
+var BF_AC = null;
+function getBFAC() {
+    if (!BF_AC) {
+        try { BF_AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+    }
+    return BF_AC;
+}
+
+function bfBeep(freq, dur, type, vol) {
+    var ac = getBFAC(); if (!ac) return;
+    try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.connect(g); g.connect(ac.destination);
+        o.type = type || "square";
+        o.frequency.setValueAtTime(freq, ac.currentTime);
+        g.gain.setValueAtTime(vol || 0.06, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.start(ac.currentTime);
+        o.stop(ac.currentTime + dur);
+    } catch(e) {}
+}
+
+function sndMove()     { bfBeep(220, 0.04, "square",   0.04); }
+function sndRotate()   { bfBeep(330, 0.05, "square",   0.05); }
+function sndLock()     { bfBeep(110, 0.08, "sawtooth", 0.07); }
+function sndHardDrop() { bfBeep(160, 0.10, "sawtooth", 0.09); vibrate(20); }
+function sndClear(n)   {
+    /* pitch rises with more lines cleared */
+    var freqs = [0, 440, 550, 660, 880];
+    bfBeep(freqs[n] || 440, 0.18, "square", 0.09);
+    if (n >= 4) { /* tetris bonus tone */
+        setTimeout(function(){ bfBeep(1100, 0.15, "square", 0.08); }, 100);
+    }
+}
+function sndGameOver() {
+    bfBeep(220, 0.12, "sawtooth", 0.08);
+    setTimeout(function(){ bfBeep(180, 0.12, "sawtooth", 0.08); }, 130);
+    setTimeout(function(){ bfBeep(140, 0.20, "sawtooth", 0.10); }, 260);
+}
+
+/* ---------------------------------------------------------
    INPUT – keyboard
 --------------------------------------------------------- */
 
@@ -279,16 +335,16 @@ document.addEventListener("keydown", function (e) {
 
     /* Move left */
     if (k === "ArrowLeft" || k === "KeyA") {
-        if (valid(piece, -1, 0, 0)) { piece.x--; vibrate(8); }
+        if (valid(piece, -1, 0, 0)) { piece.x--; vibrate(8); sndMove(); }
     }
     /* Move right */
     if (k === "ArrowRight" || k === "KeyD") {
-        if (valid(piece, 1, 0, 0)) { piece.x++; vibrate(8); }
+        if (valid(piece, 1, 0, 0)) { piece.x++; vibrate(8); sndMove(); }
     }
     /* Soft drop */
     if (k === "ArrowDown" || k === "KeyS") {
         if (valid(piece, 0, 1, 0)) { piece.y++; score++; dropTick = 0; }
-        else { lockPiece(); vibrate(15); }
+        else { lockPiece(); sndLock(); }
     }
     /* Hard drop */
     if (k === "Space") {
@@ -296,14 +352,13 @@ document.addEventListener("keydown", function (e) {
         score += (gy - piece.y) * 2;
         piece.y = gy;
         lockPiece();
-        vibrate(20);
+        sndHardDrop();
     }
     /* Rotate */
     if (k === "ArrowUp" || k === "KeyW") {
-        if (valid(piece, 0, 0, 1)) { piece.rot = (piece.rot + 1) % 4; vibrate(8); }
-        /* Wall kick */
-        else if (valid(piece, 1, 0, 1)) { piece.x++; piece.rot = (piece.rot + 1) % 4; vibrate(8); }
-        else if (valid(piece, -1, 0, 1)) { piece.x--; piece.rot = (piece.rot + 1) % 4; vibrate(8); }
+        if (valid(piece, 0, 0, 1)) { piece.rot = (piece.rot + 1) % 4; vibrate(8); sndRotate(); }
+        else if (valid(piece, 1, 0, 1)) { piece.x++; piece.rot = (piece.rot + 1) % 4; vibrate(8); sndRotate(); }
+        else if (valid(piece, -1, 0, 1)) { piece.x--; piece.rot = (piece.rot + 1) % 4; vibrate(8); sndRotate(); }
     }
 });
 
@@ -334,36 +389,34 @@ if (isTouchDevice) {
     ].join(";");
 
     var rowTop = document.createElement("div");
-    rowTop.style.cssText = "display:flex;gap:6px;";
+    rowTop.style.cssText = "display:flex;gap:6px;width:100%;box-sizing:border-box;padding:0 8px;";
     var rowBot = document.createElement("div");
-    rowBot.style.cssText = "display:flex;gap:6px;";
+    rowBot.style.cssText = "display:flex;gap:6px;width:100%;box-sizing:border-box;padding:0 8px;";
 
     function mkBtn(label, id) {
         var b = document.createElement("button");
         b.id = id;
         b.textContent = label;
         b.style.cssText = [
-            "font-family:monospace", "font-size:18px",
+            "font-family:monospace", "font-size:17px",
             "background:#111", "color:#aaa",
             "border:1px solid #444", "padding:0",
-            "width:100px", "height:56px",
+            "flex:1", "height:58px",
             "cursor:pointer", "-webkit-tap-highlight-color:transparent",
             "user-select:none"
         ].join(";");
         return b;
     }
 
-    var btnLeft   = mkBtn("<",      "bf-left");
-    var btnRight  = mkBtn(">",      "bf-right");
-    var btnRotate = mkBtn("ROTATE", "bf-rotate");
-    var btnDrop   = mkBtn("v DROP", "bf-drop");
-    btnDrop.style.width  = "206px";  /* span full row */
-    btnRotate.style.width = "100px";
+    var btnLeft   = mkBtn("<",         "bf-left");
+    var btnRight  = mkBtn(">",         "bf-right");
+    var btnRotate = mkBtn("↻ ROTATE",  "bf-rotate");
+    var btnHard   = mkBtn("⬇ DROP",    "bf-hard");
 
     rowTop.appendChild(btnLeft);
     rowTop.appendChild(btnRotate);
     rowTop.appendChild(btnRight);
-    rowBot.appendChild(btnDrop);
+    rowBot.appendChild(btnHard);
     dpad.appendChild(rowTop);
     dpad.appendChild(rowBot);
 
@@ -385,22 +438,26 @@ if (isTouchDevice) {
 
     addTouchBtn(btnLeft, function() {
         if (screen !== SC_PLAY || paused || flashTick > 0) return;
-        if (valid(piece, -1, 0, 0)) { piece.x--; vibrate(8); }
+        if (valid(piece, -1, 0, 0)) { piece.x--; vibrate(8); sndMove(); }
     });
     addTouchBtn(btnRight, function() {
         if (screen !== SC_PLAY || paused || flashTick > 0) return;
-        if (valid(piece, 1, 0, 0)) { piece.x++; vibrate(8); }
+        if (valid(piece, 1, 0, 0)) { piece.x++; vibrate(8); sndMove(); }
     });
     addTouchBtn(btnRotate, function() {
         if (screen !== SC_PLAY || paused || flashTick > 0) return;
-        if      (valid(piece, 0,  0, 1)) { piece.rot=(piece.rot+1)%4; vibrate(8); }
-        else if (valid(piece, 1,  0, 1)) { piece.x++; piece.rot=(piece.rot+1)%4; vibrate(8); }
-        else if (valid(piece, -1, 0, 1)) { piece.x--; piece.rot=(piece.rot+1)%4; vibrate(8); }
+        if      (valid(piece, 0,  0, 1)) { piece.rot=(piece.rot+1)%4; vibrate(8); sndRotate(); }
+        else if (valid(piece, 1,  0, 1)) { piece.x++; piece.rot=(piece.rot+1)%4; vibrate(8); sndRotate(); }
+        else if (valid(piece, -1, 0, 1)) { piece.x--; piece.rot=(piece.rot+1)%4; vibrate(8); sndRotate(); }
     });
-    addTouchBtn(btnDrop, function() {
+    addTouchBtn(btnHard, function() {
         if (screen !== SC_PLAY || paused || flashTick > 0) return;
-        if (valid(piece, 0, 1, 0)) { piece.y++; score++; dropTick = 0; }
-        else { lockPiece(); vibrate(15); }
+        /* Instant hard drop */
+        var hgy = ghostY();
+        score += (hgy - piece.y) * 2;
+        piece.y = hgy;
+        lockPiece();
+        sndHardDrop();
     });
 }
 
@@ -529,20 +586,20 @@ function draw() {
 
     /* ---- LOCKED BLOCKS ---- */
     for (var r = 0; r < ROWS; r++) {
-        /* Flash effect: alternate light/dark */
         var isFlash = false;
         for (var fi = 0; fi < flashRows.length; fi++) {
             if (flashRows[fi] === r) { isFlash = true; break; }
         }
         for (var c = 0; c < COLS; c++) {
             if (board[r][c]) {
-                var px = BOARD_X + c * CELL;
-                var py = BOARD_Y + r * CELL;
+                var bpx = BOARD_X + c * CELL;
+                var bpy = BOARD_Y + r * CELL;
                 if (isFlash) {
                     ctx.fillStyle = flashTick % 2 === 0 ? "#fff" : "#555";
-                    ctx.fillRect(px + 1, py + 1, CELL - 2, CELL - 2);
+                    ctx.fillRect(bpx + 1, bpy + 1, CELL - 2, CELL - 2);
                 } else {
-                    drawBlock(px, py, "#aaa");
+                    /* board stores type+1 so subtract 1 to get colour */
+                    drawBlock(bpx, bpy, COLORS[board[r][c] - 1] || "#aaa");
                 }
             }
         }
