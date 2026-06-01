@@ -66,6 +66,22 @@ function sndHiScore()  {
     setTimeout(function(){ beep(660, 0.12, "square", 0.09); }, 200);
 }
 function sndMove()     { beep(180, 0.03, "square", 0.03); }
+function sndCoin()     { beep(880, 0.07, "sine",   0.06);
+                         setTimeout(function(){ beep(1100, 0.07, "sine", 0.05); }, 70); }
+function sndNitro()    { beep(200, 0.06, "sawtooth", 0.07);
+                         setTimeout(function(){ beep(280, 0.10, "sawtooth", 0.08); }, 70); }
+function sndTurbo()    { beep(300, 0.06, "sawtooth", 0.08);
+                         setTimeout(function(){ beep(440, 0.06, "sawtooth", 0.08); }, 70);
+                         setTimeout(function(){ beep(600, 0.12, "sawtooth", 0.09); }, 140); }
+/* Engine tick – very quiet click every ~10 ticks while driving */
+var engineTick = 0;
+function tickEngine() {
+    engineTick++;
+    if (engineTick >= 10) {
+        engineTick = 0;
+        beep(55 + speedLevel * 8, 0.02, "sawtooth", 0.02);
+    }
+}
 
 /* ---------------------------------------------------------
    LAYOUT
@@ -515,6 +531,7 @@ function update() {
     /* --- SCORE / DISTANCE --- */
     distance++;
     score = distance;
+    tickEngine();
 
     /* --- SPEED RAMP --- */
     var newLevel = ((distance / 400) | 0) + 1;
@@ -568,8 +585,9 @@ function update() {
             nitroActive  = true;
             nitroTicks   = NITRO_EFFECT;
             nitroMsgTimer = 60;
-            gameSpeed   += 3;   /* instant speed boost */
+            gameSpeed   += 3;
             if (gameSpeed > 14) gameSpeed = 14;
+            sndNitro();
         }
     }
 
@@ -608,6 +626,7 @@ function update() {
             coin.alive = false;
             score += 20;
             coinMsgTimer = 40;
+            sndCoin();
             if (score > hiScore) { hiScore = score; saveHi(); }
         }
     }
@@ -641,6 +660,7 @@ function update() {
             turboMsgTimer = 60;
             gameSpeed     = baseSpeed + 6;
             if (gameSpeed > 18) gameSpeed = 18;
+            sndTurbo();
         }
     }
 
