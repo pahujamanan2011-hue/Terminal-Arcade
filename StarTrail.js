@@ -1,9 +1,8 @@
 /* =========================================================
-   STARTRAIL.JS
+   STARTRAIL.JS  v2
    Terminal Arcade – Endless Runner Protocol
-   Lightweight. Fixed FPS. Old-PC safe.
+   Polished. Lightweight. Fixed FPS. Old-PC safe.
    ========================================================= */
-
 "use strict";
 
 /* ---------------------------------------------------------
@@ -11,25 +10,40 @@
 --------------------------------------------------------- */
 var canvas = document.getElementById("pong");
 var ctx    = canvas.getContext("2d", { alpha: false });
-var W = canvas.width;   /* 640 */
-var H = canvas.height;  /* 360 */
+var W = canvas.width;
+var H = canvas.height;
 ctx.imageSmoothingEnabled = false;
+
+/* ---------------------------------------------------------
+   COLOURS
+--------------------------------------------------------- */
+var C = {
+    bg:      "#000",
+    ground:  "#1a1a1a",
+    star:    "#1e1e1e",
+    runner:  "#e8e8e8",
+    cyan:    "#3dd6d0",
+    amber:   "#d4a843",
+    green:   "#4caf70",
+    red:     "#c03030",
+    dimText: "#555",
+    midText: "#888",
+    hiText:  "#ccc",
+    white:   "#fff"
+};
 
 /* ---------------------------------------------------------
    AUDIO
 --------------------------------------------------------- */
 var ST_AC = null;
 function getSTAC() {
-    if (!ST_AC) {
-        try { ST_AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
-    }
+    if (!ST_AC) try { ST_AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
     return ST_AC;
 }
 function stBeep(freq, dur, type, vol) {
     var ac = getSTAC(); if (!ac) return;
     try {
-        var o = ac.createOscillator();
-        var g = ac.createGain();
+        var o = ac.createOscillator(), g = ac.createGain();
         o.connect(g); g.connect(ac.destination);
         o.type = type || "square";
         o.frequency.setValueAtTime(freq, ac.currentTime);
@@ -38,51 +52,64 @@ function stBeep(freq, dur, type, vol) {
         o.start(ac.currentTime); o.stop(ac.currentTime + dur);
     } catch(e){}
 }
-function sndJump()     { stBeep(440, 0.06, "square",   0.05); }
-function sndNearMiss() { stBeep(660, 0.05, "square",   0.05); }
-function sndGameOver() {
+function sndJump()       { stBeep(380, 0.06, "square",   0.05); }
+function sndLand()       { stBeep(180, 0.04, "sawtooth", 0.04); }
+function sndCollect()    { stBeep(660, 0.06, "sine",     0.05);
+                           setTimeout(function(){ stBeep(880, 0.06, "sine", 0.04); }, 60); }
+function sndNearMiss()   { stBeep(550, 0.05, "square",   0.05); }
+function sndSpeedUp()    { stBeep(330, 0.05, "square",   0.05);
+                           setTimeout(function(){ stBeep(440, 0.08, "square", 0.06); }, 70); }
+function sndShield()     { stBeep(440, 0.08, "sine",     0.06);
+                           setTimeout(function(){ stBeep(550, 0.08, "sine",   0.06); }, 90); }
+function sndShieldHit()  { stBeep(220, 0.10, "sawtooth", 0.08); }
+function sndDoubleScore(){ stBeep(550, 0.06, "square",   0.06);
+                           setTimeout(function(){ stBeep(660, 0.06, "square", 0.06); }, 80); }
+function sndAchieve()    { stBeep(440, 0.05, "square",   0.05);
+                           setTimeout(function(){ stBeep(660, 0.08, "square", 0.06); }, 80); }
+function sndBonus()      { stBeep(500, 0.06, "sine",     0.05); }
+function sndGameOver()   {
     stBeep(220, 0.10, "sawtooth", 0.08);
-    setTimeout(function(){ stBeep(180, 0.10, "sawtooth", 0.08); }, 110);
-    setTimeout(function(){ stBeep(140, 0.18, "sawtooth", 0.10); }, 220);
+    setTimeout(function(){ stBeep(180, 0.10, "sawtooth", 0.08); }, 120);
+    setTimeout(function(){ stBeep(140, 0.18, "sawtooth", 0.10); }, 240);
 }
-function sndHiScore()  {
+function sndHiScore()    {
     stBeep(440, 0.07, "square", 0.06);
     setTimeout(function(){ stBeep(550, 0.07, "square", 0.06); }, 90);
     setTimeout(function(){ stBeep(660, 0.10, "square", 0.08); }, 180);
 }
-function sndSpeedUp()  { stBeep(330, 0.05, "square", 0.05);
-                         setTimeout(function(){ stBeep(440, 0.08, "square", 0.06); }, 60); }
-function sndBonus()    { stBeep(550, 0.06, "sine", 0.05); }
 
 /* ---------------------------------------------------------
    SCREENS
 --------------------------------------------------------- */
-var SC_MENU = 0;
-var SC_PLAY = 1;
-var SC_DEAD = 2;
+var SC_MENU = 0, SC_PLAY = 1, SC_DEAD = 2;
 var screen  = SC_MENU;
 
 /* ---------------------------------------------------------
-   HIGH SCORE
+   HIGH SCORE  &  SESSION
 --------------------------------------------------------- */
-var hiScore = 0;
-var newHi   = false;
+var hiScore    = 0;
+var newHi      = false;
+var bestSpeed  = 1;
+var totalCollectibles = 0;
+var totalNearMisses   = 0;
 try { hiScore = parseInt(localStorage.getItem("terminalarcade_startrail_hi") || "0", 10); } catch(e){}
 function saveHi() { try { localStorage.setItem("terminalarcade_startrail_hi", hiScore); } catch(e){} }
 
 /* ---------------------------------------------------------
    CONSTANTS
 --------------------------------------------------------- */
-var GROUND_Y    = H - 60;   /* y of ground line            */
-var PLAYER_X    = 90;       /* player fixed x              */
-var PLAYER_W    = 18;
-var PLAYER_H    = 32;
-
-/* Obstacle pool */
-var MAX_OBS     = 8;
+var GROUND_Y  = H - 64;
+var PLAYER_X  = 90;
+var PLAYER_W  = 18;
+var PLAYER_H  = 32;
+var GRAVITY   = 0.72;
+var JUMP_VY   = -13.5;
+var MAX_OBS   = 10;
+var MAX_COL   = 6;   /* collectible pool */
+var MAX_PU    = 3;   /* powerup pool     */
 
 /* ---------------------------------------------------------
-   STATE
+   GAME STATE
 --------------------------------------------------------- */
 var score       = 0;
 var distance    = 0;
@@ -90,108 +117,202 @@ var gameSpeed   = 3.5;
 var baseSpeed   = 3.5;
 var paused      = false;
 var startTime   = 0;
-var timeSurvived = 0;  /* seconds */
+var timeSurvived = 0;
 var obstaclesAvoided = 0;
+var nearMissCount    = 0;
+var collectCount     = 0;
 var speedLevel  = 1;
 var speedMsgTimer = 0;
 
-/* Player physics */
-var playerY     = GROUND_Y - PLAYER_H;
-var velY        = 0;
-var onGround    = true;
-var GRAVITY     = 0.7;
-var JUMP_VY     = -13;
-var jumpQueued  = false;
-
-/* Double jump */
-var jumpsLeft   = 2;
+/* Player */
+var playerY   = GROUND_Y - PLAYER_H;
+var velY      = 0;
+var onGround  = true;
+var jumpsLeft = 1;          /* only 1 jump by default */
+var landTick  = 0;          /* impact line timer */
+var jumpCooldown = 0;       /* prevent touch spam */
 
 /* Near miss */
 var nearMissTimer = 0;
+var nearMissVal   = 0;
 
 /* Survival bonus */
-var bonusTick   = 0;
-var BONUS_EVERY = 900;  /* 30s at 30fps */
-var bonusMsg    = 0;
+var bonusTick  = 0;
+var BONUS_EVERY = 900;
+var bonusMsg   = 0;
 
-/* Obstacles pool – reused, no GC */
+/* Double score power-up */
+var dblScore   = false;
+var dblTicks   = 0;
+var DBL_EFFECT = 300;
+
+/* Shield power-up */
+var shieldOn   = false;
+var shieldTicks = 0;
+var SHIELD_EFFECT = 240;
+
+/* Magnet power-up */
+var magnetOn   = false;
+var magnetTicks = 0;
+var MAGNET_EFFECT = 240;
+
+/* Environment zone */
+var ZONE_NORMAL  = 0;
+var ZONE_GRID    = 1;
+var ZONE_STORM   = 2;
+var ZONE_CORRUPT = 3;
+var zone         = ZONE_NORMAL;
+var zoneTick     = 0;
+var ZONE_EVERY   = 1500;   /* ~50s */
+var zoneMsg      = 0;
+var ZONE_NAMES   = ["TERMINAL NORMAL","GRID SECTOR","DATA STORM","CORRUPT ZONE"];
+
+/* Bg scrolling text */
+var BG_MSGS = ["SYSTEM ONLINE","SCANNING...","UPLINK ACTIVE","DATA STREAM","PROTOCOL RUN",
+               "ACCESS GRANTED","SECTOR CLEAR","LINK OPEN","TRACE ACTIVE","NODE 7F"];
+var bgMsgX   = W + 20;
+var bgMsgIdx = 0;
+var bgMsgY   = 0;
+
+/* Achievement popup */
+var achMsg   = "";
+var achTimer = 0;
+var achGiven = {};   /* track given achievements */
+
+/* Daily objective */
+var OBJ_TYPES = [
+    { desc: "Collect 8 fragments",   check: function(){ return collectCount >= 8; },  bonus: 80  },
+    { desc: "Survive 45 seconds",    check: function(){ return timeSurvived >= 45; }, bonus: 100 },
+    { desc: "Reach Speed Level 4",   check: function(){ return speedLevel >= 4; },    bonus: 120 },
+    { desc: "Avoid 20 obstacles",    check: function(){ return obstaclesAvoided >= 20; }, bonus: 60 },
+    { desc: "Get 3 near misses",     check: function(){ return nearMissCount >= 3; }, bonus: 50  }
+];
+var objIdx      = 0;
+var objDone     = false;
+var objBonusMsg = 0;
+
+/* Pools */
 var obs = [];
-for (var oi = 0; oi < MAX_OBS; oi++) {
-    obs.push({ x:0, y:0, w:0, h:0, alive:false, type:0 });
-}
+for (var oi = 0; oi < MAX_OBS; oi++)
+    obs.push({ x:0, y:0, w:0, h:0, alive:false, vx:0 });
 
-/* Obstacle spawn */
+var cols = [];
+for (var ci = 0; ci < MAX_COL; ci++)
+    cols.push({ x:0, y:0, alive:false, type:0 });   /* 0=fragment 1=energy */
+
+var pus = [];
+for (var pi = 0; pi < MAX_PU; pi++)
+    pus.push({ x:0, y:0, alive:false, type:0 });   /* 0=shield 1=double 2=magnet */
+
+/* Spawn timers */
 var spawnTimer    = 0;
-var spawnInterval = 80;
-var lastObsX      = W + 200;  /* prevent instant double-spawn */
+var spawnInterval = 78;
+var colTimer      = 0;
+var COL_INTERVAL  = 120;
+var puTimer       = 0;
+var PU_INTERVAL   = 600;   /* 20s */
 
-/* Background stars – static array, computed once */
-var STAR_COUNT = 40;
+/* Stars – static, computed once */
+var STAR_COUNT = 45;
 var stars = [];
-for (var si = 0; si < STAR_COUNT; si++) {
-    stars.push({
-        x: (Math.random() * W) | 0,
-        y: (Math.random() * (GROUND_Y - 20)) | 0,
-        s: Math.random() < 0.3 ? 2 : 1
-    });
-}
+for (var si = 0; si < STAR_COUNT; si++)
+    stars.push({ x:(Math.random()*W)|0, y:(Math.random()*(GROUND_Y-20))|0,
+                 s: Math.random() < 0.3 ? 2 : 1 });
 
 /* Obstacle types */
 var OBS_TYPES = [
-    /* spike   */ { w:14, h:28, col:"#ccc" },
-    /* wall    */ { w:18, h:48, col:"#aaa" },
-    /* low bar */ { w:36, h:14, col:"#bbb" },
-    /* block   */ { w:22, h:22, col:"#999" },
-    /* tall    */ { w:12, h:56, col:"#ddd" }
+    { w:14, h:28, col:"#bbb" },   /* spike      */
+    { w:18, h:48, col:"#999" },   /* wall       */
+    { w:40, h:14, col:"#aaa" },   /* low bar    */
+    { w:22, h:22, col:"#ccc" },   /* block      */
+    { w:12, h:56, col:"#ddd" }    /* tall wall  */
 ];
 
 /* ---------------------------------------------------------
    INIT
 --------------------------------------------------------- */
 function initGame() {
-    score          = 0;
-    distance       = 0;
-    gameSpeed      = 3.5;
-    baseSpeed      = 3.5;
-    paused         = false;
-    newHi          = false;
-    playerY        = GROUND_Y - PLAYER_H;
-    velY           = 0;
-    onGround       = true;
-    jumpsLeft      = 2;
-    jumpQueued     = false;
-    speedLevel     = 1;
-    speedMsgTimer  = 0;
-    spawnTimer     = 0;
-    spawnInterval  = 80;
-    lastObsX       = W + 200;
-    nearMissTimer  = 0;
-    bonusTick      = 0;
-    bonusMsg       = 0;
-    obstaclesAvoided = 0;
-    startTime      = Date.now();
-    timeSurvived   = 0;
+    score = distance = 0;
+    gameSpeed = baseSpeed = 3.5;
+    paused = false; newHi = false;
+    playerY  = GROUND_Y - PLAYER_H;
+    velY     = 0; onGround = true;
+    jumpsLeft = 1; landTick = 0; jumpCooldown = 0;
+    speedLevel = 1; speedMsgTimer = 0;
+    spawnTimer = 0; spawnInterval = 78;
+    colTimer   = 0; puTimer = 0;
+    nearMissTimer = 0; nearMissVal = 0; nearMissCount = 0;
+    bonusTick  = 0; bonusMsg = 0;
+    obstaclesAvoided = 0; collectCount = 0;
+    dblScore = false; dblTicks = 0;
+    shieldOn = false; shieldTicks = 0;
+    magnetOn = false; magnetTicks = 0;
+    zone = ZONE_NORMAL; zoneTick = 0; zoneMsg = 0;
+    bgMsgX = W + 20; bgMsgIdx = (Math.random() * BG_MSGS.length) | 0;
+    bgMsgY = (20 + Math.random() * (GROUND_Y - 40)) | 0;
+    achMsg = ""; achTimer = 0; achGiven = {};
+    objIdx  = (Math.random() * OBJ_TYPES.length) | 0;
+    objDone = false; objBonusMsg = 0;
+    startTime = Date.now(); timeSurvived = 0;
+    bestSpeed = 1;
     for (var i = 0; i < MAX_OBS; i++) obs[i].alive = false;
+    for (var i = 0; i < MAX_COL; i++) cols[i].alive = false;
+    for (var i = 0; i < MAX_PU;  i++) pus[i].alive  = false;
     screen = SC_PLAY;
 }
 
 /* ---------------------------------------------------------
-   SPAWN OBSTACLE
+   ACHIEVEMENT HELPER
+--------------------------------------------------------- */
+function giveAch(key, msg) {
+    if (achGiven[key]) return;
+    achGiven[key] = true;
+    achMsg   = msg;
+    achTimer = 60;
+    sndAchieve();
+}
+
+/* ---------------------------------------------------------
+   SPAWN HELPERS
 --------------------------------------------------------- */
 function spawnObs() {
-    /* Don't spawn too close to last obstacle */
     for (var i = 0; i < MAX_OBS; i++) {
-        if (obs[i].alive && obs[i].x > W - 80) return;
+        if (obs[i].alive && obs[i].x > W - 90) return;
     }
     for (var i = 0; i < MAX_OBS; i++) {
         if (!obs[i].alive) {
             var tp = OBS_TYPES[(Math.random() * OBS_TYPES.length) | 0];
-            obs[i].w     = tp.w;
-            obs[i].h     = tp.h;
-            obs[i].col   = tp.col;
-            obs[i].x     = W + 10;
-            obs[i].y     = GROUND_Y - tp.h;
+            obs[i].w = tp.w; obs[i].h = tp.h; obs[i].col = tp.col;
+            obs[i].x = W + 10; obs[i].y = GROUND_Y - tp.h;
             obs[i].alive = true;
+            /* Moving block at higher speeds */
+            obs[i].vx = (speedLevel >= 5 && Math.random() < 0.25) ?
+                        (Math.random() < 0.5 ? 0.5 : -0.5) : 0;
+            return;
+        }
+    }
+}
+
+function spawnCol() {
+    for (var i = 0; i < MAX_COL; i++) {
+        if (!cols[i].alive) {
+            var type = Math.random() < 0.75 ? 0 : 1;  /* 0=fragment 1=energy */
+            cols[i].x     = W + 10;
+            cols[i].y     = GROUND_Y - PLAYER_H - 10 - (Math.random() * 28 | 0);
+            cols[i].alive = true;
+            cols[i].type  = type;
+            return;
+        }
+    }
+}
+
+function spawnPU() {
+    for (var i = 0; i < MAX_PU; i++) {
+        if (!pus[i].alive) {
+            pus[i].x     = W + 10;
+            pus[i].y     = GROUND_Y - PLAYER_H - 14;
+            pus[i].alive = true;
+            pus[i].type  = (Math.random() * 3) | 0;  /* 0=shield 1=double 2=magnet */
             return;
         }
     }
@@ -200,13 +321,13 @@ function spawnObs() {
 /* ---------------------------------------------------------
    INPUT
 --------------------------------------------------------- */
-var jumpKeys = false;
-
 function doJump() {
+    if (jumpCooldown > 0) return;
     if (jumpsLeft > 0) {
         velY = JUMP_VY;
         jumpsLeft--;
         onGround = false;
+        jumpCooldown = 8;
         sndJump();
     }
 }
@@ -214,7 +335,6 @@ function doJump() {
 document.addEventListener("keydown", function(e) {
     var k = e.code;
     if (k === "Space" || k === "ArrowUp") e.preventDefault();
-
     if (screen === SC_MENU && (k === "Enter" || k === "Space" || k === "KeyW" || k === "ArrowUp")) {
         initGame(); return;
     }
@@ -224,52 +344,36 @@ document.addEventListener("keydown", function(e) {
     if (k === "Escape") { if (screen === SC_PLAY) screen = SC_MENU; return; }
     if (k === "KeyP" && screen === SC_PLAY) { paused = !paused; return; }
     if (k === "KeyF") { toggleSTFS(); return; }
-
     if (screen !== SC_PLAY || paused) return;
-    if (k === "Space" || k === "KeyW" || k === "ArrowUp") { doJump(); }
+    if (k === "Space" || k === "KeyW" || k === "ArrowUp") doJump();
 });
 
 function toggleSTFS() {
-    if (!document.fullscreenElement) {
-        if (canvas.requestFullscreen) canvas.requestFullscreen();
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) { if (canvas.requestFullscreen) canvas.requestFullscreen(); }
+    else { if (document.exitFullscreen) document.exitFullscreen(); }
 }
 
 /* ---------------------------------------------------------
-   TOUCH CONTROLS – external DOM buttons
+   TOUCH CONTROLS
 --------------------------------------------------------- */
-var isTouchST = (typeof window !== "undefined" &&
-    window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+var isTouchST = typeof window !== "undefined" &&
+    window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
 
 if (isTouchST) {
     var stDpad = document.createElement("div");
     stDpad.id = "st-dpad";
-    stDpad.style.cssText = [
-        "display:flex", "gap:6px", "padding:8px",
-        "background:#000", "justify-content:center",
-        "width:640px", "max-width:100%", "box-sizing:border-box"
-    ].join(";");
-
-    function mkSTBtn(label, id) {
+    stDpad.style.cssText = "display:flex;gap:6px;padding:8px;background:#000;" +
+                           "justify-content:center;width:640px;max-width:100%;box-sizing:border-box;";
+    function mkSTBtn(lbl, id) {
         var b = document.createElement("button");
-        b.id = id;
-        b.textContent = label;
-        b.style.cssText = [
-            "font-family:monospace", "font-size:20px",
-            "background:#111", "color:#aaa",
-            "border:1px solid #444",
-            "flex:1", "height:64px",
-            "cursor:pointer",
-            "-webkit-tap-highlight-color:transparent",
-            "user-select:none"
-        ].join(";");
+        b.id = id; b.textContent = lbl;
+        b.style.cssText = "font-family:monospace;font-size:20px;background:#111;color:#aaa;" +
+                          "border:1px solid #444;flex:1;height:64px;cursor:pointer;" +
+                          "-webkit-tap-highlight-color:transparent;user-select:none;";
         return b;
     }
-
-    var stBtnJump  = mkSTBtn("JUMP ↑",  "st-jump");
-    var stBtnPause = mkSTBtn("II",       "st-pause");
+    var stBtnJump  = mkSTBtn("JUMP ↑", "st-jump");
+    var stBtnPause = mkSTBtn("II",     "st-pause");
     stBtnPause.style.flex = "0 0 64px";
     stDpad.appendChild(stBtnJump);
     stDpad.appendChild(stBtnPause);
@@ -277,7 +381,7 @@ if (isTouchST) {
 
     stBtnJump.addEventListener("touchstart", function(e) {
         e.preventDefault();
-        stBtnJump.style.background = "#333";
+        stBtnJump.style.background = "#222";
         if (screen === SC_MENU || screen === SC_DEAD) {
             if (typeof requestLandscape === "function") requestLandscape();
             initGame(); return;
@@ -285,10 +389,8 @@ if (isTouchST) {
         if (screen === SC_PLAY && !paused) doJump();
     }, { passive: false });
     stBtnJump.addEventListener("touchend", function(e) {
-        e.preventDefault();
-        stBtnJump.style.background = "#111";
+        e.preventDefault(); stBtnJump.style.background = "#111";
     }, { passive: false });
-
     stBtnPause.addEventListener("touchstart", function(e) {
         e.preventDefault();
         if (screen === SC_PLAY) {
@@ -298,36 +400,26 @@ if (isTouchST) {
     }, { passive: false });
 }
 
-/* Canvas tap for menu/dead */
 canvas.addEventListener("touchstart", function(e) {
     e.preventDefault();
     if (screen === SC_MENU || screen === SC_DEAD) {
         if (typeof requestLandscape === "function") requestLandscape();
         initGame();
-    } else if (screen === SC_PLAY && !paused) {
-        doJump();
-    }
+    } else if (screen === SC_PLAY && !paused) { doJump(); }
 }, { passive: false });
 
-canvas.addEventListener("click", function(e) {
-    if (screen === SC_MENU || screen === SC_DEAD) { initGame(); }
+canvas.addEventListener("click", function() {
+    if (screen === SC_MENU || screen === SC_DEAD) initGame();
 });
 
-/* ---------------------------------------------------------
-   INJECT PAUSE BUTTON into overlay topbar
---------------------------------------------------------- */
+/* Pause button in overlay topbar */
 (function() {
     var topbar = document.getElementById("overlay-topbar");
     if (!topbar || document.getElementById("st-pause-top")) return;
     var pb = document.createElement("button");
-    pb.id = "st-pause-top";
-    pb.textContent = "II PAUSE";
-    pb.style.cssText = [
-        "font-family:monospace", "font-size:12px",
-        "background:#111", "color:#aaa",
-        "border:1px solid #333", "padding:4px 10px",
-        "cursor:pointer", "margin-left:8px"
-    ].join(";");
+    pb.id = "st-pause-top"; pb.textContent = "II PAUSE";
+    pb.style.cssText = "font-family:monospace;font-size:12px;background:#111;color:#aaa;" +
+                       "border:1px solid #333;padding:4px 10px;cursor:pointer;margin-left:8px;";
     pb.addEventListener("click", function() {
         if (screen !== SC_PLAY) return;
         paused = !paused;
@@ -342,96 +434,158 @@ canvas.addEventListener("click", function(e) {
 function update() {
     if (screen !== SC_PLAY || paused) return;
 
-    /* Time */
+    if (jumpCooldown > 0) jumpCooldown--;
+
     timeSurvived = ((Date.now() - startTime) / 1000) | 0;
 
-    /* Survival bonus every 30s */
+    /* Survival bonus */
     bonusTick++;
     if (bonusTick >= BONUS_EVERY) {
         bonusTick = 0;
-        score += 50;
-        bonusMsg = 60;
-        sndBonus();
+        var pts = dblScore ? 100 : 50;
+        score += pts; bonusMsg = 55; sndBonus();
     }
     if (bonusMsg > 0) bonusMsg--;
 
     /* Distance + score */
     distance++;
-    score = distance + (obstaclesAvoided * 2);
+    var add = dblScore ? 2 : 1;
+    score += add;
 
-    /* Speed ramp every 300 distance */
-    var newLevel = ((distance / 300) | 0) + 1;
+    /* Speed ramp */
+    var newLevel = ((distance / 280) | 0) + 1;
     if (newLevel > speedLevel) {
         speedLevel    = newLevel;
-        baseSpeed     = 3.5 + (speedLevel - 1) * 0.5;
-        if (baseSpeed > 12) baseSpeed = 12;
-        gameSpeed     = baseSpeed;
-        spawnInterval = 80 - speedLevel * 5;
-        if (spawnInterval < 28) spawnInterval = 28;
-        speedMsgTimer = 75;
+        baseSpeed     = 3.5 + (speedLevel - 1) * 0.55;
+        if (baseSpeed > 14) baseSpeed = 14;
+        if (!dblScore && !shieldOn && !magnetOn) gameSpeed = baseSpeed;
+        spawnInterval = 78 - speedLevel * 5;
+        if (spawnInterval < 24) spawnInterval = 24;
+        speedMsgTimer = 80;
         sndSpeedUp();
+        if (speedLevel > bestSpeed) bestSpeed = speedLevel;
     }
     if (speedMsgTimer > 0) speedMsgTimer--;
+
+    /* Power-up countdowns */
+    if (dblScore)  { dblTicks--;    if (dblTicks <= 0)    { dblScore = false; gameSpeed = baseSpeed; } }
+    if (shieldOn)  { shieldTicks--; if (shieldTicks <= 0)  shieldOn  = false; }
+    if (magnetOn)  { magnetTicks--; if (magnetTicks <= 0)  magnetOn  = false; }
+
+    /* Zone rotation */
+    zoneTick++;
+    if (zoneTick >= ZONE_EVERY) {
+        zoneTick = 0;
+        zone = (zone + 1) % 4;
+        zoneMsg = 80;
+    }
+    if (zoneMsg > 0) zoneMsg--;
+
+    /* Background message scroll */
+    bgMsgX -= 0.6;
+    if (bgMsgX < -200) {
+        bgMsgX   = W + 20;
+        bgMsgIdx = ((bgMsgIdx + 1) % BG_MSGS.length);
+        bgMsgY   = (20 + Math.random() * (GROUND_Y - 40)) | 0;
+    }
 
     /* Player physics */
     velY += GRAVITY;
     playerY += velY;
-
     if (playerY >= GROUND_Y - PLAYER_H) {
+        if (!onGround) { landTick = 5; sndLand(); }
         playerY  = GROUND_Y - PLAYER_H;
-        velY     = 0;
-        onGround = true;
-        jumpsLeft = 2;
-    } else {
-        onGround = false;
-    }
+        velY     = 0; onGround = true;
+        jumpsLeft = 1;
+    } else { onGround = false; }
+    if (landTick > 0) landTick--;
 
     /* Spawn */
-    spawnTimer++;
-    if (spawnTimer >= spawnInterval) {
-        spawnTimer = 0;
-        spawnObs();
+    spawnTimer++; if (spawnTimer >= spawnInterval) { spawnTimer = 0; spawnObs(); }
+    colTimer++;   if (colTimer   >= COL_INTERVAL)  { colTimer   = 0; spawnCol(); }
+    puTimer++;    if (puTimer    >= PU_INTERVAL)    { puTimer    = 0; spawnPU();  }
+
+    var px = PLAYER_X, py = playerY | 0;
+
+    /* Collectibles */
+    for (var i = 0; i < MAX_COL; i++) {
+        var c = cols[i]; if (!c.alive) continue;
+        c.x -= gameSpeed;
+        /* Magnet pull */
+        if (magnetOn) {
+            var mdx = (px + PLAYER_W/2) - (c.x + 6);
+            var mdy = (py + PLAYER_H/2) - (c.y + 6);
+            var md  = Math.sqrt(mdx*mdx + mdy*mdy);
+            if (md < 120) { c.x += mdx * 0.08; c.y += mdy * 0.08; }
+        }
+        if (c.x + 12 < 0) { c.alive = false; continue; }
+        if (px + 2 < c.x + 12 && px + PLAYER_W - 2 > c.x &&
+            py + 2 < c.y + 12 && py + PLAYER_H - 2 > c.y) {
+            c.alive = false;
+            collectCount++;
+            totalCollectibles++;
+            var pts2 = c.type === 1 ? 10 : 5;
+            if (dblScore) pts2 *= 2;
+            score += pts2;
+            sndCollect();
+            nearMissVal  = pts2;
+            nearMissTimer = 40;
+            if (score > hiScore) { hiScore = score; newHi = true; saveHi(); }
+            /* Achievements */
+            if (collectCount >= 10) giveAch("col10", "COLLECTOR");
+            if (collectCount >= 1 && !achGiven["col1"]) giveAch("col1", "FIRST PICKUP");
+        }
     }
 
-    /* Move obstacles + collision */
-    var px = PLAYER_X;
-    var py = playerY | 0;
+    /* Power-ups */
+    for (var i = 0; i < MAX_PU; i++) {
+        var p = pus[i]; if (!p.alive) continue;
+        p.x -= gameSpeed;
+        if (p.x + 16 < 0) { p.alive = false; continue; }
+        if (px + 2 < p.x + 16 && px + PLAYER_W - 2 > p.x &&
+            py + 2 < p.y + 16 && py + PLAYER_H - 2 > p.y) {
+            p.alive = false;
+            if (p.type === 0) { shieldOn = true;  shieldTicks = SHIELD_EFFECT; sndShield(); }
+            if (p.type === 1) { dblScore = true;  dblTicks    = DBL_EFFECT;    sndDoubleScore();
+                                gameSpeed = baseSpeed * 0.85; }
+            if (p.type === 2) { magnetOn = true;  magnetTicks = MAGNET_EFFECT; sndCollect(); }
+            nearMissVal   = 0;
+            nearMissTimer = 50;
+        }
+    }
+
+    /* Obstacles */
     var crashed = false;
-
     for (var i = 0; i < MAX_OBS; i++) {
-        var o = obs[i];
-        if (!o.alive) continue;
+        var o = obs[i]; if (!o.alive) continue;
         o.x -= gameSpeed;
+        if (o.vx !== 0) {
+            o.y += o.vx;
+            if (o.y < GROUND_Y - o.h - 30 || o.y > GROUND_Y - o.h) o.vx = -o.vx;
+        }
+        if (o.x + o.w < 0) { o.alive = false; obstaclesAvoided++; continue; }
 
-        /* Off screen */
-        if (o.x + o.w < 0) {
-            o.alive = false;
-            obstaclesAvoided++;
-            continue;
+        /* Collision */
+        if (px + 3 < o.x + o.w && px + PLAYER_W - 3 > o.x &&
+            py + 3 < o.y + o.h && py + PLAYER_H - 3 > o.y) {
+            if (shieldOn) {
+                shieldOn = false; o.alive = false;
+                sndShieldHit();
+                nearMissVal = 0; nearMissTimer = 50;
+            } else { crashed = true; break; }
         }
 
-        /* AABB collision – tight hitbox (2px shrink) */
-        if (px + 2         < o.x + o.w &&
-            px + PLAYER_W - 2 > o.x     &&
-            py + 2         < o.y + o.h  &&
-            py + PLAYER_H - 2 > o.y) {
-            crashed = true; break;
-        }
-
-        /* Near miss: passed within 10px horizontally */
-        if (o.x + o.w >= px - 10 && o.x + o.w < px + 2) {
-            var vertGap = Math.min(
-                Math.abs(py - (o.y + o.h)),
-                Math.abs((py + PLAYER_H) - o.y)
-            );
-            if (vertGap < 16) {
-                score += 3;
-                nearMissTimer = 35;
-                sndNearMiss();
+        /* Near miss */
+        if (o.x + o.w >= px - 12 && o.x + o.w < px + 3) {
+            var vg = Math.min(Math.abs(py - (o.y + o.h)), Math.abs((py + PLAYER_H) - o.y));
+            if (vg < 18) {
+                var nm = dblScore ? 20 : 10;
+                score += nm; nearMissCount++; totalNearMisses++;
+                nearMissVal = nm; nearMissTimer = 40; sndNearMiss();
+                if (score > hiScore) { hiScore = score; newHi = true; saveHi(); }
             }
         }
     }
-
     if (nearMissTimer > 0) nearMissTimer--;
 
     if (crashed) {
@@ -439,72 +593,162 @@ function update() {
         else sndGameOver();
         try { if (navigator.vibrate) navigator.vibrate([30, 20, 30]); } catch(e){}
         screen = SC_DEAD;
+        return;
     }
+
+    /* Daily objective check */
+    if (!objDone && OBJ_TYPES[objIdx].check()) {
+        objDone = true; objBonusMsg = 100;
+        score  += OBJ_TYPES[objIdx].bonus;
+        if (score > hiScore) { hiScore = score; newHi = true; saveHi(); }
+        giveAch("obj", "OBJECTIVE!");
+    }
+    if (objBonusMsg > 0) objBonusMsg--;
+
+    /* Achievements */
+    if (!achGiven["first"])  giveAch("first",  "FIRST RUN");
+    if (score >= 100  && !achGiven["s100"])  giveAch("s100",  "100 SCORE");
+    if (score >= 500  && !achGiven["s500"])  giveAch("s500",  "500 SCORE");
+    if (distance >= 100 && !achGiven["m100"]) giveAch("m100", "100 METERS");
+    if (speedLevel >= 5 && !achGiven["spd5"]) giveAch("spd5", "SPEED DEMON");
+    if (achTimer > 0) achTimer--;
 }
 
 /* ---------------------------------------------------------
    DRAW HELPERS
 --------------------------------------------------------- */
 function centered(txt, y, size, col) {
-    ctx.fillStyle = col || "#aaa";
+    ctx.fillStyle = col || C.midText;
     ctx.font = size + "px monospace";
     var tw = ctx.measureText(txt).width;
     ctx.fillText(txt, (W - tw) >> 1, y);
 }
 
-/* Draw the runner character */
-function drawRunner(x, y) {
+function drawRunner(x, y, idle) {
     var cx = (x + PLAYER_W / 2) | 0;
-    /* Head */
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(cx - 5, y,      10, 10);
-    /* Body */
-    ctx.fillRect(cx - 3, y + 10, 6,  12);
-    /* Arms */
-    ctx.fillRect(cx - 9, y + 12, 7,  3);
-    ctx.fillRect(cx + 2,  y + 12, 7,  3);
-    /* Legs – alternate based on distance for run animation */
-    var frame = (distance >> 2) % 2;
-    if (frame === 0) {
-        ctx.fillRect(cx - 5, y + 22, 4, 10);
-        ctx.fillRect(cx + 1,  y + 22, 4,  7);
-        ctx.fillRect(cx + 1,  y + 29, 7,  3);
-    } else {
-        ctx.fillRect(cx - 5, y + 22, 4,  7);
-        ctx.fillRect(cx - 9, y + 29, 7,  3);
-        ctx.fillRect(cx + 1,  y + 22, 4, 10);
+    var yy = y | 0;
+    var col = shieldOn ? C.cyan : C.runner;
+
+    /* Shield ring */
+    if (shieldOn) {
+        ctx.fillStyle = "#0a2a2a";
+        ctx.fillRect(cx - 14, yy - 4, 28, PLAYER_H + 8);
+        ctx.fillStyle = C.cyan;
+        ctx.fillRect(cx - 13, yy - 4, 2, PLAYER_H + 8);
+        ctx.fillRect(cx + 11, yy - 4, 2, PLAYER_H + 8);
     }
+
+    ctx.fillStyle = col;
+    /* Head */
+    ctx.fillRect(cx - 5, yy,      10, 10);
     /* Eye */
     ctx.fillStyle = "#000";
-    ctx.fillRect(cx + 2, y + 3, 2, 2);
+    ctx.fillRect(cx + 2, yy + 3, 2, 2);
+    ctx.fillStyle = col;
+    /* Body */
+    ctx.fillRect(cx - 3, yy + 10, 6, 12);
+
+    /* Arms – based on frame */
+    var frame = idle ? ((Date.now() >> 7) & 1) : ((distance >> 2) & 1);
+    if (frame === 0) {
+        ctx.fillRect(cx - 9, yy + 11, 7, 3);
+        ctx.fillRect(cx + 2,  yy + 13, 7, 3);
+    } else {
+        ctx.fillRect(cx - 9, yy + 13, 7, 3);
+        ctx.fillRect(cx + 2,  yy + 11, 7, 3);
+    }
+
+    /* Legs */
+    if (idle) {
+        ctx.fillRect(cx - 5, yy + 22, 4, 10);
+        ctx.fillRect(cx + 1,  yy + 22, 4, 10);
+    } else if (frame === 0) {
+        ctx.fillRect(cx - 5, yy + 22, 4, 10);
+        ctx.fillRect(cx + 1,  yy + 22, 4,  6);
+        ctx.fillRect(cx + 1,  yy + 28, 6,  3);
+    } else {
+        ctx.fillRect(cx - 5, yy + 22, 4,  6);
+        ctx.fillRect(cx - 9, yy + 28, 6,  3);
+        ctx.fillRect(cx + 1,  yy + 22, 4, 10);
+    }
+
+    /* Magnet glow */
+    if (magnetOn) {
+        ctx.fillStyle = C.amber;
+        ctx.fillRect(cx - 6, yy - 2, 2, 2);
+        ctx.fillRect(cx + 4, yy - 2, 2, 2);
+    }
 }
 
-/* Draw one obstacle */
 function drawObs(o) {
-    var x = o.x | 0;
-    var y = o.y | 0;
-    ctx.fillStyle = o.col;
-
+    var x = o.x | 0, y = o.y | 0;
+    var col = zone === ZONE_CORRUPT ? "#bb3333" :
+              zone === ZONE_STORM   ? "#888"    : o.col;
+    ctx.fillStyle = col;
     if (o.h > o.w * 2) {
-        /* Tall spike / firewall */
-        ctx.fillRect(x + 3, y,      o.w - 6, o.h);
-        ctx.fillRect(x,     y + 6,  o.w,     o.h - 6);
-        /* Top point */
-        ctx.fillRect(x + 5, y - 6,  o.w - 10, 6);
+        ctx.fillRect(x + 3, y,     o.w - 6, o.h);
+        ctx.fillRect(x,     y + 6, o.w,     o.h - 6);
+        ctx.fillRect(x + 5, y - 6, o.w - 10, 6);
     } else if (o.w > o.h * 2) {
-        /* Low bar / corrupted data block */
-        ctx.fillRect(x,     y,      o.w, o.h);
-        /* Glitch lines */
-        ctx.fillStyle = "#333";
-        ctx.fillRect(x + 4, y + 2,  o.w - 8, 2);
-        ctx.fillRect(x + 4, y + 6,  o.w - 8, 2);
-    } else {
-        /* Regular block */
         ctx.fillRect(x, y, o.w, o.h);
-        /* Inner shading */
+        ctx.fillStyle = "#333";
+        ctx.fillRect(x + 4, y + 2, o.w - 8, 2);
+        ctx.fillRect(x + 4, y + 6, o.w - 8, 2);
+    } else {
+        ctx.fillRect(x, y, o.w, o.h);
         ctx.fillStyle = "#333";
         ctx.fillRect(x + 2, y + 2, 4, 4);
         ctx.fillRect(x + o.w - 6, y + 2, 4, 4);
+    }
+}
+
+function drawCollectible(c) {
+    var x = (c.x) | 0, y = (c.y) | 0;
+    if (c.type === 0) {
+        /* Data Fragment – cyan diamond */
+        ctx.fillStyle = C.cyan;
+        ctx.fillRect(x + 4, y,      4,  4);
+        ctx.fillRect(x,     y + 4,  12, 4);
+        ctx.fillRect(x + 4, y + 8,  4,  4);
+        ctx.fillStyle = "#004444";
+        ctx.fillRect(x + 5, y + 4,  2,  4);
+    } else {
+        /* Energy Cell – amber hex */
+        ctx.fillStyle = C.amber;
+        ctx.fillRect(x + 2, y,      8,  4);
+        ctx.fillRect(x,     y + 4,  12, 4);
+        ctx.fillRect(x + 2, y + 8,  8,  4);
+        ctx.fillStyle = "#442200";
+        ctx.fillRect(x + 4, y + 4,  4,  4);
+    }
+}
+
+function drawPowerUp(p) {
+    var x = (p.x) | 0, y = (p.y) | 0;
+    var blink = (distance >> 2) & 1;
+    if (p.type === 0) {
+        /* Shield – cyan brackets */
+        ctx.fillStyle = blink ? C.cyan : "#224444";
+        ctx.fillRect(x,      y,      4, 16);
+        ctx.fillRect(x + 12, y,      4, 16);
+        ctx.fillRect(x + 4,  y,      8,  4);
+        ctx.fillRect(x + 4,  y + 12, 8,  4);
+        ctx.fillStyle = C.cyan;
+        ctx.font = "7px monospace"; ctx.fillText("S", x + 5, y + 11);
+    } else if (p.type === 1) {
+        /* Double score – green x2 */
+        ctx.fillStyle = blink ? C.green : "#224422";
+        ctx.fillRect(x, y, 16, 16);
+        ctx.fillStyle = "#000";
+        ctx.font = "9px monospace"; ctx.fillText("x2", x + 2, y + 12);
+    } else {
+        /* Magnet – amber M */
+        ctx.fillStyle = blink ? C.amber : "#442200";
+        ctx.fillRect(x,     y,      4, 16);
+        ctx.fillRect(x + 12,y,      4, 16);
+        ctx.fillRect(x + 4, y,      8,  6);
+        ctx.fillStyle = "#000";
+        ctx.font = "8px monospace"; ctx.fillText("M", x + 4, y + 14);
     }
 }
 
@@ -512,111 +756,201 @@ function drawObs(o) {
    DRAW
 --------------------------------------------------------- */
 function draw() {
-    /* BG */
-    ctx.fillStyle = "#000";
+    /* BG – zone tint */
+    ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, W, H);
 
+    if (zone === ZONE_CORRUPT) {
+        ctx.fillStyle = "#0a0000";
+        ctx.fillRect(0, 0, W, H);
+    } else if (zone === ZONE_STORM) {
+        ctx.fillStyle = "#00000a";
+        ctx.fillRect(0, 0, W, H);
+    }
+
     /* Stars */
-    ctx.fillStyle = "#222";
+    ctx.fillStyle = C.star;
     for (var si = 0; si < STAR_COUNT; si++) {
         var st = stars[si];
         ctx.fillRect(st.x, st.y, st.s, st.s);
     }
 
+    /* Grid lines in grid zone */
+    if (zone === ZONE_GRID) {
+        ctx.fillStyle = "#0c0c0c";
+        for (var gxi = 0; gxi < W; gxi += 32)
+            ctx.fillRect(gxi, 0, 1, GROUND_Y);
+        for (var gyi = 0; gyi < GROUND_Y; gyi += 32)
+            ctx.fillRect(0, gyi, W, 1);
+    }
+
+    /* Scrolling bg message */
+    if (screen === SC_PLAY) {
+        ctx.fillStyle = "#111";
+        ctx.font = "10px monospace";
+        ctx.fillText(BG_MSGS[bgMsgIdx], bgMsgX | 0, bgMsgY);
+    }
+
     /* ---- MENU ---- */
     if (screen === SC_MENU) {
-        centered("TERMINAL ARCADE",          50,  13, "#444");
-        centered("STARTRAIL",                95,  28, "#ccc");
-        centered("ENDLESS RUNNER PROTOCOL",  128, 12, "#555");
+        centered("TERMINAL ARCADE",         48,  13, C.dimText);
+        centered("STARTRAIL",               94,  30, C.hiText);
+        centered("ENDLESS RUNNER PROTOCOL", 128, 12, C.dimText);
 
-        ctx.fillStyle = "#1a1a1a";
-        ctx.fillRect(220, 155, 200, 28);
+        /* Idle runner */
+        drawRunner(PLAYER_X + 220, GROUND_Y - PLAYER_H - 10, true);
+
+        ctx.fillStyle = "#111";
+        ctx.fillRect(220, 152, 200, 28);
         ctx.strokeStyle = "#444"; ctx.lineWidth = 1;
-        ctx.strokeRect(220.5, 155.5, 199, 27);
-        centered("ENTER / SPACE = START",    170, 12, "#bbb");
+        ctx.strokeRect(220.5, 152.5, 199, 27);
+        centered("ENTER / SPACE = START", 167, 12, C.hiText);
 
-        centered("HIGH SCORE: " + hiScore,   212, 13, "#444");
-        centered("SPACE / W / ↑ = JUMP",     248, 10, "#333");
-        centered("P = PAUSE   F = FULLSCREEN   ESC = EXIT", 263, 10, "#333");
+        centered("HIGH SCORE: " + hiScore,   206, 13, C.dimText);
+        centered("TODAY: " + hiScore,        222, 10, "#333");
+
+        centered("SPACE / W / ↑ = JUMP  |  P = PAUSE", 252, 10, "#333");
+        centered("F = FULLSCREEN  |  ESC = EXIT",       266, 10, "#333");
+
+        /* Version */
+        ctx.fillStyle = "#222"; ctx.font = "9px monospace";
+        ctx.fillText("v2.0", W - 30, H - 8);
         return;
     }
 
     /* ---- GROUND ---- */
-    ctx.fillStyle = "#1a1a1a";
+    ctx.fillStyle = zone === ZONE_CORRUPT ? "#2a0000" : C.ground;
     ctx.fillRect(0, GROUND_Y, W, 2);
-
-    /* Scrolling ground detail */
     ctx.fillStyle = "#111";
     var goff = distance % 40;
-    for (var gx = -goff; gx < W; gx += 40) {
-        ctx.fillRect(gx | 0, GROUND_Y + 4, 20, 1);
+    for (var gx = (-(goff | 0)); gx < W; gx += 40)
+        ctx.fillRect(gx, GROUND_Y + 4, 20, 1);
+
+    /* Data storm extra symbols */
+    if (zone === ZONE_STORM && (distance & 3) === 0) {
+        ctx.fillStyle = "#1a1a1a";
+        ctx.font = "10px monospace";
+        var sym = ["0","1","#","@","$"][distance % 5];
+        ctx.fillText(sym, (Math.random() * W) | 0, (Math.random() * GROUND_Y) | 0);
     }
+
+    /* ---- COLLECTIBLES ---- */
+    for (var i = 0; i < MAX_COL; i++)
+        if (cols[i].alive) drawCollectible(cols[i]);
+
+    /* ---- POWER-UPS ---- */
+    for (var i = 0; i < MAX_PU; i++)
+        if (pus[i].alive) drawPowerUp(pus[i]);
 
     /* ---- OBSTACLES ---- */
-    for (var i = 0; i < MAX_OBS; i++) {
+    for (var i = 0; i < MAX_OBS; i++)
         if (obs[i].alive) drawObs(obs[i]);
-    }
 
     /* ---- RUNNER ---- */
-    drawRunner(PLAYER_X, playerY | 0);
+    drawRunner(PLAYER_X, playerY, false);
 
-    /* ---- HUD ---- */
-    ctx.fillStyle = "#555";
-    ctx.font = "10px monospace";
-    ctx.fillText("DIST", 10, 18);
-    ctx.fillStyle = "#ccc";
-    ctx.font = "13px monospace";
-    ctx.fillText(score, 10, 32);
+    /* Landing impact line */
+    if (landTick > 0) {
+        ctx.fillStyle = C.dimText;
+        ctx.fillRect(PLAYER_X - 2, GROUND_Y, PLAYER_W + 4, 1);
+    }
 
-    ctx.fillStyle = "#444";
-    ctx.font = "10px monospace";
-    ctx.fillText("HIGH", 10, 50);
-    ctx.fillStyle = "#888";
-    ctx.font = "12px monospace";
-    ctx.fillText(hiScore, 10, 64);
+    /* ---- HUD BAR ---- */
+    ctx.fillStyle = "#080808";
+    ctx.fillRect(0, 0, W, 22);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 22, W, 1);
 
-    ctx.fillStyle = "#333";
+    ctx.fillStyle = C.hiText;
     ctx.font = "10px monospace";
-    ctx.fillText("SPD:" + speedLevel, 10, 80);
+    ctx.fillText("SCR " + score, 8, 15);
+
+    ctx.fillStyle = C.dimText;
+    var sep = " | ";
+    ctx.fillText("HIGH " + hiScore, 90, 15);
+    ctx.fillText(sep, 148, 15);
+    ctx.fillText("SPD " + speedLevel, 168, 15);
+    ctx.fillText(sep, 208, 15);
 
     /* Time */
     var mm = ((timeSurvived / 60) | 0);
     var ss = timeSurvived % 60;
-    var timeStr = (mm > 0 ? mm + "m " : "") + ss + "s";
-    ctx.fillStyle = "#333";
-    ctx.font = "10px monospace";
-    ctx.fillText(timeStr, W - 60, 18);
+    ctx.fillText("TIME " + (mm > 0 ? mm + "m" : "") + ss + "s", 228, 15);
 
-    /* Near miss flash */
+    /* Active power-up indicators right side */
+    var puX = W - 8;
+    if (dblScore)  {
+        ctx.fillStyle = C.green;
+        ctx.font = "9px monospace";
+        var dl = "x2 " + ((dblTicks / 30) | 0) + "s";
+        puX -= ctx.measureText(dl).width + 4;
+        ctx.fillText(dl, puX, 15);
+    }
+    if (shieldOn)  {
+        ctx.fillStyle = C.cyan;
+        ctx.font = "9px monospace";
+        var sl = "[S] " + ((shieldTicks / 30) | 0) + "s";
+        puX -= ctx.measureText(sl).width + 4;
+        ctx.fillText(sl, puX, 15);
+    }
+    if (magnetOn)  {
+        ctx.fillStyle = C.amber;
+        ctx.font = "9px monospace";
+        var ml = "[M] " + ((magnetTicks / 30) | 0) + "s";
+        puX -= ctx.measureText(ml).width + 4;
+        ctx.fillText(ml, puX, 15);
+    }
+
+    /* Near miss / collect popup */
     if (nearMissTimer > 0) {
-        ctx.fillStyle = "#aaaa00";
-        ctx.font = "10px monospace";
-        ctx.fillText("+3", PLAYER_X + 20, playerY - 4);
+        var col2 = nearMissVal > 5 ? C.amber : C.cyan;
+        ctx.fillStyle = col2;
+        ctx.font = "11px monospace";
+        var nm2 = nearMissVal > 0 ? "+" + nearMissVal : "SHIELD!";
+        ctx.fillText(nm2, PLAYER_X + PLAYER_W + 4, (playerY - 6) | 0);
     }
 
     /* Speed level message */
-    if (speedMsgTimer > 0) {
-        centered("SPEED LEVEL " + speedLevel, H / 2 - 20, 15, "#666");
+    if (speedMsgTimer > 0)
+        centered("SPEED LEVEL " + speedLevel, H / 2 - 22, 14, C.amber);
+
+    /* Zone message */
+    if (zoneMsg > 0)
+        centered(ZONE_NAMES[zone], H / 2 - 4, 11, C.dimText);
+
+    /* Survival bonus */
+    if (bonusMsg > 0)
+        centered("SURVIVAL BONUS +" + (dblScore ? 100 : 50), H / 2 + 14, 12, C.green);
+
+    /* Objective banner */
+    if (!objDone) {
+        ctx.fillStyle = "#111";
+        ctx.font = "9px monospace";
+        ctx.fillText("OBJ: " + OBJ_TYPES[objIdx].desc, 8, H - 8);
+    }
+    if (objBonusMsg > 0) {
+        centered("OBJECTIVE COMPLETE! +" + OBJ_TYPES[objIdx].bonus, H / 2 + 28, 12, C.green);
     }
 
-    /* Survival bonus message */
-    if (bonusMsg > 0) {
-        centered("SURVIVAL BONUS +50", H / 2 - 4, 13, "#558855");
+    /* Achievement popup – top right corner */
+    if (achTimer > 0) {
+        var alpha = achTimer > 20 ? 1 : achTimer / 20;
+        ctx.fillStyle = "#0d0d0d";
+        ctx.fillRect(W - 145, 28, 137, 22);
+        ctx.strokeStyle = C.amber; ctx.lineWidth = 1;
+        ctx.strokeRect(W - 144.5, 28.5, 136, 21);
+        ctx.fillStyle = C.amber;
+        ctx.font = "9px monospace";
+        var atw = ctx.measureText("✓ " + achMsg).width;
+        ctx.fillText("✓ " + achMsg, W - 144 + ((136 - atw) >> 1), 43);
     }
-
-    /* Double jump indicator */
-    ctx.fillStyle = jumpsLeft >= 2 ? "#333" : (jumpsLeft === 1 ? "#555" : "#111");
-    ctx.fillRect(W - 22, H - GROUND_Y + 2, 12, 6);
-    ctx.fillStyle = "#222";
-    ctx.font = "8px monospace";
-    ctx.fillText("JMP", W - 24, H - GROUND_Y + 18);
 
     /* Paused */
     if (paused) {
         ctx.fillStyle = "#000";
         for (var pi = 0; pi < H; pi += 2) ctx.fillRect(0, pi, W, 1);
-        centered("PAUSED",       H/2 - 10, 18, "#aaa");
-        centered("P = RESUME",   H/2 + 16, 11, "#555");
+        centered("PAUSED",     H/2 - 10, 18, C.hiText);
+        centered("P = RESUME", H/2 + 16, 11, C.dimText);
     }
 
     /* ---- DEATH SCREEN ---- */
@@ -624,17 +958,36 @@ function draw() {
         ctx.fillStyle = "#000";
         for (var di = 0; di < H; di += 2) ctx.fillRect(0, di, W, 1);
 
-        centered("SYSTEM FAILURE",                  115, 20, "#ccc");
-        centered("DISTANCE: "  + score,             148, 13, "#aaa");
-        centered("TIME: "      + timeSurvived + "s",168, 12, "#888");
-        centered("AVOIDED: "   + obstaclesAvoided,  186, 12, "#777");
-        if (newHi) centered("*** NEW HIGH SCORE ***", 208, 12, "#999");
+        centered("SYSTEM FAILURE",                     105, 20, C.hiText);
+        if (newHi) centered("*** NEW HIGH SCORE ***",  128, 12, C.amber);
+
+        /* Stats box */
+        ctx.fillStyle = "#0a0a0a";
+        ctx.fillRect(180, 138, 280, 84);
+        ctx.strokeStyle = "#333"; ctx.lineWidth = 1;
+        ctx.strokeRect(180.5, 138.5, 279, 83);
+
+        ctx.fillStyle = C.dimText; ctx.font = "10px monospace";
+        ctx.fillText("DISTANCE",    196, 154); ctx.fillStyle = C.hiText;
+        ctx.font = "11px monospace"; ctx.fillText(score,          310, 154);
+        ctx.fillStyle = C.dimText; ctx.font = "10px monospace";
+        ctx.fillText("TIME",        196, 170); ctx.fillStyle = C.midText;
+        ctx.fillText(timeSurvived + "s",       310, 170);
+        ctx.fillStyle = C.dimText;
+        ctx.fillText("COLLECTED",   196, 186); ctx.fillStyle = C.cyan;
+        ctx.fillText(collectCount,             310, 186);
+        ctx.fillStyle = C.dimText;
+        ctx.fillText("NEAR MISSES", 196, 202); ctx.fillStyle = C.amber;
+        ctx.fillText(nearMissCount,            310, 202);
+        ctx.fillStyle = C.dimText;
+        ctx.fillText("BEST SPEED",  196, 218); ctx.fillStyle = "#888";
+        ctx.fillText(bestSpeed,                310, 218);
 
         ctx.fillStyle = "#111";
-        ctx.fillRect(220, 222, 200, 28);
+        ctx.fillRect(220, 232, 200, 28);
         ctx.strokeStyle = "#444"; ctx.lineWidth = 1;
-        ctx.strokeRect(220.5, 222.5, 199, 27);
-        centered("ENTER = PLAY AGAIN", 241, 13, "#bbb");
+        ctx.strokeRect(220.5, 232.5, 199, 27);
+        centered("ENTER = PLAY AGAIN", 251, 13, C.hiText);
     }
 }
 
