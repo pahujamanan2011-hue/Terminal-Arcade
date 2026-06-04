@@ -332,7 +332,7 @@ function doJump() {
     }
 }
 
-document.addEventListener("keydown", function(e) {
+window.__currentKeydown = function(e) {
     var k = e.code;
     if (k === "Space" || k === "ArrowUp") e.preventDefault();
     if (screen === SC_MENU && (k === "Enter" || k === "Space" || k === "KeyW" || k === "ArrowUp")) {
@@ -377,7 +377,7 @@ if (isTouchST) {
     stBtnPause.style.flex = "0 0 64px";
     stDpad.appendChild(stBtnJump);
     stDpad.appendChild(stBtnPause);
-    canvas.parentNode.insertBefore(stDpad, canvas.nextSibling);
+    var _dw = document.getElementById('dpad-wrap'); if (_dw) _dw.appendChild(stDpad);
 
     stBtnJump.addEventListener("touchstart", function(e) {
         e.preventDefault();
@@ -994,6 +994,33 @@ function draw() {
 /* ---------------------------------------------------------
    LOOP
 --------------------------------------------------------- */
+document.addEventListener("keydown", window.__currentKeydown);
+
+
+/* ---------------------------------------------------------
+   CLEANUP – called by index.html goBack() to remove all
+   listeners and injected DOM nodes, preventing blank screen
+   bug when switching games.
+--------------------------------------------------------- */
+(function() {
+    /* Named handler references stored so we can remove them */
+    var _kd = window.__currentKeydown;
+    var _ku = window.__currentKeyup;
+    window.__gameCleanup = function() {
+        if (_kd) document.removeEventListener("keydown", _kd);
+        if (_ku) document.removeEventListener("keyup",   _ku);
+        /* Remove D-pad */
+        var dw = document.getElementById("dpad-wrap");
+        if (dw) dw.innerHTML = "";
+        /* Remove injected topbar buttons */
+        var tb = document.getElementById("overlay-topbar");
+        if (tb) {
+            var extra = tb.querySelectorAll("button:not(#back-btn)");
+            for (var i = 0; i < extra.length; i++) extra[i].remove();
+        }
+    };
+})();
+
 window.__gameInterval = setInterval(function() {
     update();
     draw();
