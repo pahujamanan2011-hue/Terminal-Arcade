@@ -893,6 +893,7 @@ function drawTrafficCar(t) {
 --------------------------------------------------------- */
 
 function draw() {
+    if (window.__removeSkeleton) window.__removeSkeleton();
 
     /* Shake offset */
     var sx = 0, sy = 0;
