@@ -352,7 +352,7 @@ function collides(ax, ay, aw, ah, bx, by, bw, bh) {
 var keyLeft  = false;
 var keyRight = false;
 
-document.addEventListener("keydown", function (e) {
+window.__currentKeydown = function (e) {
 
     var k = e.code;
 
@@ -380,7 +380,7 @@ document.addEventListener("keydown", function (e) {
     if (k === "ArrowRight" || k === "KeyD") keyRight = true;
 });
 
-document.addEventListener("keyup", function (e) {
+window.__currentKeyup = function (e) {
     var k = e.code;
     if (k === "ArrowLeft"  || k === "KeyA") keyLeft  = false;
     if (k === "ArrowRight" || k === "KeyD") keyRight = false;
@@ -457,7 +457,7 @@ if (isTouchNC) {
     var ncBtnRight = mkNCBtn("RIGHT >", "nc-right");
     ncdpad.appendChild(ncBtnLeft);
     ncdpad.appendChild(ncBtnRight);
-    canvas.parentNode.insertBefore(ncdpad, canvas.nextSibling);
+    var _dw = document.getElementById('dpad-wrap'); if (_dw) _dw.appendChild(ncdpad);
 
     function ncHold(btn, setFlag) {
         btn.addEventListener("touchstart", function(e) {
@@ -1147,6 +1147,34 @@ function draw() {
 /* ---------------------------------------------------------
    LOOP  – fixed ~30 FPS
 --------------------------------------------------------- */
+
+document.addEventListener("keydown", window.__currentKeydown);
+document.addEventListener("keyup", window.__currentKeyup);
+
+
+/* ---------------------------------------------------------
+   CLEANUP – called by index.html goBack() to remove all
+   listeners and injected DOM nodes, preventing blank screen
+   bug when switching games.
+--------------------------------------------------------- */
+(function() {
+    /* Named handler references stored so we can remove them */
+    var _kd = window.__currentKeydown;
+    var _ku = window.__currentKeyup;
+    window.__gameCleanup = function() {
+        if (_kd) document.removeEventListener("keydown", _kd);
+        if (_ku) document.removeEventListener("keyup",   _ku);
+        /* Remove D-pad */
+        var dw = document.getElementById("dpad-wrap");
+        if (dw) dw.innerHTML = "";
+        /* Remove injected topbar buttons */
+        var tb = document.getElementById("overlay-topbar");
+        if (tb) {
+            var extra = tb.querySelectorAll("button:not(#back-btn)");
+            for (var i = 0; i < extra.length; i++) extra[i].remove();
+        }
+    };
+})();
 
 window.__gameInterval = setInterval(function () {
     update();
