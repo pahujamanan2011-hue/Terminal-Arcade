@@ -303,13 +303,6 @@ function launchGame(file) {
     canvas.id     = "pong";
     canvas.width  = 640;
     canvas.height = 360;
-    /* Explicitly set CSS so canvas never collapses on narrow screens.
-       We scale by width; height follows aspect ratio via aspect-ratio property. */
-    canvas.style.width    = "100%";
-    canvas.style.maxWidth = "640px";
-    canvas.style.height   = "auto";
-    canvas.style.aspectRatio = "640 / 360";
-    canvas.style.display  = "block";
     cw.appendChild(canvas);
 
     /* Update title */
