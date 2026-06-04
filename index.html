@@ -16,51 +16,66 @@
 
 <div id="terminal">
 
-    <!-- HEADER -->
     <div id="topbar">
         <span>TERMINAL ARCADE</span>
     </div>
 
-    <!-- INTRO -->
     <div id="intro">
         <p>> Play lightweight browser games built for old PCs and Linux systems.</p>
-        <p>> Pong, Snake, Tetris and more.</p>
-        <p>> Mobile compatible. No install. No ads.</p>
-        <p>
-            > GitHub:
-            <a href="https://github.com/pahujamanan2011-hue" target="_blank" rel="noopener noreferrer">
-                github.com/pahujamanan2011-hue
-            </a>
-        </p>
+        <p>> Pong, Snake, Tetris and more. Mobile compatible. No install. No ads.</p>
+        <p>> GitHub: <a href="https://github.com/pahujamanan2011-hue" target="_blank" rel="noopener noreferrer">github.com/pahujamanan2011-hue</a></p>
+    </div>
+
+    <!-- HELP SECTION -->
+    <div id="help-bar" onclick="toggleHelp()">
+        <span id="help-toggle">> HOW TO PLAY  [click to expand]</span>
+    </div>
+    <div id="help-panel" style="display:none;">
+        <div class="help-grid">
+            <div class="help-item">
+                <span class="help-key">RETRO BALL</span>
+                <span class="help-desc">W / S or Arrow keys to move paddle. First to 5 wins. D = change difficulty.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">VOID SERPENT</span>
+                <span class="help-desc">WASD or Arrows to steer snake. Eat apples. Collect power-ups. Walls wrap.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">BLOCKFALL</span>
+                <span class="help-desc">A/D = move, W = rotate, S = soft drop, SPACE = instant drop. Clear lines to score.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">NIGHT CIRCUIT</span>
+                <span class="help-desc">A/D or Arrows to steer. Avoid traffic. Collect NOS &amp; Turbo power-ups. Coins = +20.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">STARTRAIL</span>
+                <span class="help-desc">SPACE / W / ↑ to jump (double jump available). Collect fragments. Avoid obstacles.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">SLAPPY WORLD</span>
+                <span class="help-desc">SPACE or tap to flap. Fly through gaps. Collect crystals and energy cells.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">SIGNAL LOST</span>
+                <span class="help-desc">Click the correct answer button before the timer runs out. 3 mistakes = game over.</span>
+            </div>
+            <div class="help-item">
+                <span class="help-key">ALL GAMES</span>
+                <span class="help-desc">P = pause &nbsp;|&nbsp; F = fullscreen &nbsp;|&nbsp; ESC = back to menu &nbsp;|&nbsp; ← BACK button = exit game</span>
+            </div>
+        </div>
     </div>
 
     <!-- GAME GRID -->
     <div id="games">
-
-        <div class="game-card" onclick="launchGame('RetroBall.js')">
-            <img src="RetroBall.png" alt="Retro Ball">
-            <div class="game-info">
-                <h3>RETRO BALL</h3>
-                <p>Classic terminal pong. Beat the CPU.</p>
-                <p class="hint">Click to play &bull; F = fullscreen &bull; P = pause</p>
-            </div>
-        </div>
 
         <div class="game-card" onclick="launchGame('VoidSerpent.js')">
             <img src="VoidSerpent.png" alt="Void Serpent">
             <div class="game-info">
                 <h3>VOID SERPENT</h3>
                 <p>Terminal snake survival system.</p>
-                <p class="hint">Click to play &bull; WASD / Arrows &bull; P = pause</p>
-            </div>
-        </div>
-
-        <div class="game-card" onclick="launchGame('BlockFall.js')">
-            <img src="BlockFall.png" alt="BlockFall">
-            <div class="game-info">
-                <h3>BLOCKFALL</h3>
-                <p>Classic terminal block puzzle.</p>
-                <p class="hint">Click to play &bull; WASD / Arrows &bull; P = pause &bull; SPACE = hard drop</p>
+                <p class="hint">WASD / Arrows &bull; Power-ups &bull; Wall wrap</p>
             </div>
         </div>
 
@@ -69,16 +84,25 @@
             <div class="game-info">
                 <h3>NIGHT CIRCUIT</h3>
                 <p>Low-light traffic simulation. Survive the road.</p>
-                <p class="hint">Click to play &bull; A/D or Arrows = drive &bull; P = pause</p>
+                <p class="hint">A/D or Arrows = drive &bull; NOS &bull; Turbo &bull; Coins</p>
             </div>
         </div>
 
-        <div class="game-card" onclick="launchGame('StarTrail.js')">
-            <img src="StarTrail.png" alt="StarTrail">
+        <div class="game-card" onclick="launchGame('BlockFall.js')">
+            <img src="BlockFall.png" alt="BlockFall">
             <div class="game-info">
-                <h3>STARTRAIL</h3>
-                <p>Endless runner protocol. Jump to survive.</p>
-                <p class="hint">Click to play &bull; SPACE / W / ↑ = jump &bull; P = pause</p>
+                <h3>BLOCKFALL</h3>
+                <p>Classic terminal block puzzle.</p>
+                <p class="hint">WASD / Arrows &bull; SPACE = instant drop</p>
+            </div>
+        </div>
+
+        <div class="game-card" onclick="launchGame('SignalLost.js')">
+            <img src="SignalLost.png" alt="Signal Lost">
+            <div class="game-info">
+                <h3>SIGNAL LOST</h3>
+                <p>A terminal survival mystery. Route the signals.</p>
+                <p class="hint">Click answers &bull; Beat the clock &bull; Uncover the story</p>
             </div>
         </div>
 
@@ -87,7 +111,25 @@
             <div class="game-info">
                 <h3>SLAPPY WORLD</h3>
                 <p>Terminal flight protocol. Flap to survive.</p>
-                <p class="hint">Click to play &bull; SPACE / tap = flap &bull; P = pause</p>
+                <p class="hint">SPACE / tap = flap &bull; Collect crystals</p>
+            </div>
+        </div>
+
+        <div class="game-card" onclick="launchGame('RetroBall.js')">
+            <img src="RetroBall.png" alt="Retro Ball">
+            <div class="game-info">
+                <h3>RETRO BALL</h3>
+                <p>Classic terminal pong. Beat the CPU.</p>
+                <p class="hint">W/S or Arrows &bull; D = difficulty</p>
+            </div>
+        </div>
+
+        <div class="game-card" onclick="launchGame('StarTrail.js')">
+            <img src="StarTrail.png" alt="StarTrail">
+            <div class="game-info">
+                <h3>STARTRAIL</h3>
+                <p>Endless runner protocol. Jump to survive.</p>
+                <p class="hint">SPACE / W / ↑ = jump &bull; Power-ups &bull; Achievements</p>
             </div>
         </div>
 
@@ -95,12 +137,21 @@
 
     <!-- STATUS LINE -->
     <div id="statusbar">
-        <span id="status-msg">> No game loaded.</span>
+        <span id="status-msg">> No game loaded. Click a game above to play.</span>
     </div>
 
     <!-- FOOTER -->
     <div id="footer">
-        <span>Manan Pahuja &nbsp;&bull;&nbsp; pahujamanan2011@gmail.com &nbsp;&bull;&nbsp; <a href="terms.html" style="color:#335533;text-decoration:none;">Terms &amp; Conditions</a></span>
+        <div id="footer-main">Terminal Arcade v1.0 &nbsp;&bull;&nbsp; Retro games for modern browsers.</div>
+        <div id="footer-links">
+            <span class="footer-link" onclick="showTermsPopup()">Terms</span>
+            &nbsp;&bull;&nbsp;
+            <span class="footer-link" onclick="showTermsPopup()">Privacy</span>
+            &nbsp;&bull;&nbsp;
+            <a href="mailto:pahujamanan2011@gmail.com">pahujamanan2011@gmail.com</a>
+            &nbsp;&bull;&nbsp;
+            &copy; Manan Pahuja
+        </div>
     </div>
 
 </div>
@@ -111,67 +162,155 @@
         <button id="back-btn" onclick="goBack()">&#8592; BACK</button>
         <span id="overlay-title">TERMINAL ARCADE</span>
     </div>
-    <canvas id="pong" width="640" height="360"></canvas>
-    <div id="overlay-hint">ESC or F = fullscreen &nbsp;|&nbsp; P = pause</div>
+    <!-- canvas is injected here dynamically -->
+    <div id="canvas-wrap"></div>
+    <div id="dpad-wrap"></div>
+    <div id="overlay-hint">P = pause &nbsp;|&nbsp; F = fullscreen &nbsp;|&nbsp; ESC = menu</div>
+</div>
+
+<!-- TERMS POPUP -->
+<div id="terms-popup" style="display:none;">
+    <div id="terms-box">
+        <div id="terms-header">
+            <span>TERMINAL ARCADE — TERMS &amp; PRIVACY</span>
+            <button onclick="hideTermsPopup()">&#x2715;</button>
+        </div>
+        <div id="terms-body">
+            <h3>Terms of Use</h3>
+            <p>1. Games are provided as-is for personal, non-commercial use.</p>
+            <p>2. High scores are stored locally in your browser only.</p>
+            <p>3. No personal data is collected or transmitted.</p>
+            <p>4. No account registration required.</p>
+            <p>5. No purchases or gambling of any kind.</p>
+            <p>6. No warranties of availability or fitness.</p>
+            <p>7. Copyright remains with Manan Pahuja.</p>
+            <h3>Privacy</h3>
+            <p>No accounts. No tracking pixels. No advertising scripts. No sale of data. Local storage only for high scores.</p>
+            <h3>Local Storage Keys</h3>
+            <p><code>sl_hi</code> &nbsp;<code>sw_hi</code> &nbsp;<code>vs_hi</code> &nbsp;<code>bf_hi</code> &nbsp;<code>terminalarcade_nightcircuit_hi</code> &nbsp;<code>terminalarcade_startrail_hi</code></p>
+            <p>These never leave your device. Clear them via browser settings at any time.</p>
+            <h3>Contact</h3>
+            <p><a href="mailto:pahujamanan2011@gmail.com">pahujamanan2011@gmail.com</a> &nbsp;&bull;&nbsp; <a href="https://github.com/pahujamanan2011-hue" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+        </div>
+    </div>
 </div>
 
 <script>
+/* =========================================================
+   TERMINAL ARCADE — LAUNCHER
+   Core fix: each game registers window.__gameCleanup().
+   goBack() calls it to remove all listeners + DOM nodes
+   before destroying the script. This prevents the blank
+   screen / event listener leak bug.
+   ========================================================= */
 
 var currentScript = null;
 
+/* ---- Landscape helper ---- */
 function requestLandscape() {
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock("landscape").catch(function () {});
+    try {
+        if (screen.orientation && screen.orientation.lock)
+            screen.orientation.lock("landscape").catch(function(){});
+    } catch(e){}
+}
+
+/* ---- Help toggle ---- */
+function toggleHelp() {
+    var p = document.getElementById("help-panel");
+    var t = document.getElementById("help-toggle");
+    if (p.style.display === "none") {
+        p.style.display = "block";
+        t.textContent = "> HOW TO PLAY  [click to collapse]";
+    } else {
+        p.style.display = "none";
+        t.textContent = "> HOW TO PLAY  [click to expand]";
     }
 }
 
+/* ---- Terms popup ---- */
+function showTermsPopup() {
+    document.getElementById("terms-popup").style.display = "flex";
+}
+function hideTermsPopup() {
+    document.getElementById("terms-popup").style.display = "none";
+}
+/* Close popup on backdrop click */
+document.getElementById("terms-popup").addEventListener("click", function(e) {
+    if (e.target === this) hideTermsPopup();
+});
+
+/* ---- BACK ---- */
 function goBack() {
-    document.getElementById("overlay").style.display = "none";
+
+    /* 1. Stop game loop */
     if (window.__gameInterval) {
         clearInterval(window.__gameInterval);
         window.__gameInterval = null;
     }
+
+    /* 2. Call game's own cleanup (removes its keydown/touch listeners) */
+    if (typeof window.__gameCleanup === "function") {
+        try { window.__gameCleanup(); } catch(e){}
+        window.__gameCleanup = null;
+    }
+
+    /* 3. Remove injected D-pad / pause buttons */
+    var dw = document.getElementById("dpad-wrap");
+    if (dw) dw.innerHTML = "";
+
+    /* Remove any pause buttons added to overlay-topbar by games */
+    var topbar = document.getElementById("overlay-topbar");
+    var extraBtns = topbar.querySelectorAll("button:not(#back-btn)");
+    for (var i = 0; i < extraBtns.length; i++) extraBtns[i].remove();
+
+    /* 4. Remove canvas */
+    var cw = document.getElementById("canvas-wrap");
+    if (cw) cw.innerHTML = "";
+
+    /* 5. Remove script tag */
     if (currentScript) {
         currentScript.remove();
         currentScript = null;
     }
-    document.getElementById("status-msg").textContent = "> No game loaded.";
+
+    /* 6. Hide overlay */
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("status-msg").textContent = "> No game loaded. Click a game above to play.";
 }
 
+/* ---- LAUNCH ---- */
 function launchGame(file) {
+
+    /* Clean up any previous game first */
+    goBack();
+
+    /* Show overlay */
     var overlay = document.getElementById("overlay");
     overlay.style.display = "flex";
 
     requestLandscape();
 
-    if (window.__gameInterval) {
-        clearInterval(window.__gameInterval);
-        window.__gameInterval = null;
-    }
-    if (currentScript) {
-        currentScript.remove();
-        currentScript = null;
-    }
+    /* Fresh canvas inside canvas-wrap */
+    var cw = document.getElementById("canvas-wrap");
+    var canvas = document.createElement("canvas");
+    canvas.id     = "pong";
+    canvas.width  = 640;
+    canvas.height = 360;
+    cw.appendChild(canvas);
 
-    var oldCanvas = document.getElementById("pong");
-    var newCanvas = document.createElement("canvas");
-    newCanvas.id     = "pong";
-    newCanvas.width  = 640;
-    newCanvas.height = 360;
-    oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
-
+    /* Update title */
     document.getElementById("overlay-title").textContent =
-        file.replace(".js", "").toUpperCase();
+        file.replace(".js","").replace(/([A-Z])/g," $1").trim().toUpperCase();
 
-    var script = document.createElement("script");
-    script.src = file;
+    /* Load game script */
+    var script    = document.createElement("script");
+    script.src    = file;
     currentScript = script;
     document.body.appendChild(script);
 
     document.getElementById("status-msg").textContent =
-        "> Running: " + file + "   [F = fullscreen  P = pause  ESC = menu]";
+        "> Running: " + file + "   [P = pause  F = fullscreen  ESC = menu]";
 }
-
 </script>
 
 </body>
