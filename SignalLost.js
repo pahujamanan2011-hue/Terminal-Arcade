@@ -638,6 +638,7 @@ function drawSignal(s, r) {
    DRAW
 --------------------------------------------------------- */
 function draw() {
+    if (window.__removeSkeleton) window.__removeSkeleton();
     ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, W, H);
 
