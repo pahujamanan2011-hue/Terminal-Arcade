@@ -303,7 +303,7 @@ function sndGameOver() {
    INPUT – keyboard
 --------------------------------------------------------- */
 
-document.addEventListener("keydown", function (e) {
+window.__currentKeydown = function (e) {
 
     var k = e.code;
 
@@ -421,7 +421,7 @@ if (isTouchDevice) {
     dpad.appendChild(rowBot);
 
     /* Insert after canvas */
-    canvas.parentNode.insertBefore(dpad, canvas.nextSibling);
+    var _dw = document.getElementById('dpad-wrap'); if (_dw) _dw.appendChild(dpad);
 
     /* Touch handlers on buttons */
     function addTouchBtn(btn, action) {
@@ -752,6 +752,33 @@ canvas.addEventListener("click", function (e) {
 /* ---------------------------------------------------------
    LOOP
 --------------------------------------------------------- */
+
+document.addEventListener("keydown", window.__currentKeydown);
+
+
+/* ---------------------------------------------------------
+   CLEANUP – called by index.html goBack() to remove all
+   listeners and injected DOM nodes, preventing blank screen
+   bug when switching games.
+--------------------------------------------------------- */
+(function() {
+    /* Named handler references stored so we can remove them */
+    var _kd = window.__currentKeydown;
+    var _ku = window.__currentKeyup;
+    window.__gameCleanup = function() {
+        if (_kd) document.removeEventListener("keydown", _kd);
+        if (_ku) document.removeEventListener("keyup",   _ku);
+        /* Remove D-pad */
+        var dw = document.getElementById("dpad-wrap");
+        if (dw) dw.innerHTML = "";
+        /* Remove injected topbar buttons */
+        var tb = document.getElementById("overlay-topbar");
+        if (tb) {
+            var extra = tb.querySelectorAll("button:not(#back-btn)");
+            for (var i = 0; i < extra.length; i++) extra[i].remove();
+        }
+    };
+})();
 
 window.__gameInterval = setInterval(function () {
     update();
