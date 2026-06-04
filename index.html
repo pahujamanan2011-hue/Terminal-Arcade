@@ -283,8 +283,7 @@ function goBack() {
 /* ---- LAUNCH ---- */
 function launchGame(file) {
 
-    /* Always clean up first without hiding overlay if already visible
-       (prevents flash when switching games) */
+    /* Always clean up first */
     cleanupGame();
 
     /* Show overlay */
@@ -294,22 +293,46 @@ function launchGame(file) {
 
     requestLandscape();
 
-    /* Create a fresh canvas and put it in canvas-wrap */
+    /* Create a fresh canvas in canvas-wrap */
     var cw = document.getElementById("canvas-wrap");
+
+    /* Show skeleton loader while script fetches */
+    cw.classList.add("loading");
+
     var canvas = document.createElement("canvas");
     canvas.id     = "pong";
     canvas.width  = 640;
     canvas.height = 360;
+    /* Explicitly set CSS so canvas never collapses on narrow screens.
+       We scale by width; height follows aspect ratio via aspect-ratio property. */
+    canvas.style.width    = "100%";
+    canvas.style.maxWidth = "640px";
+    canvas.style.height   = "auto";
+    canvas.style.aspectRatio = "640 / 360";
+    canvas.style.display  = "block";
     cw.appendChild(canvas);
 
     /* Update title */
     document.getElementById("overlay-title").textContent =
         file.replace(".js", "").replace(/([A-Z])/g, " $1").trim().toUpperCase();
 
-    /* Load script — append ?t=timestamp so browser ALWAYS re-executes it.
-       Without this, cached scripts don't re-run and the game shows a black screen. */
+    /* Remove skeleton once script has loaded and first draw tick fires */
+    window.__removeSkeleton = function() {
+        var cw2 = document.getElementById("canvas-wrap");
+        if (cw2) cw2.classList.remove("loading");
+        window.__removeSkeleton = null;
+    };
+
+    /* Load script with cache-bust timestamp so browser always re-executes */
     var script    = document.createElement("script");
     script.src    = file + "?t=" + Date.now();
+    /* Remove skeleton on script load (fallback if game doesn't call it) */
+    script.onload = function() {
+        setTimeout(function() {
+            var cw3 = document.getElementById("canvas-wrap");
+            if (cw3) cw3.classList.remove("loading");
+        }, 100);
+    };
     currentScript = script;
     document.body.appendChild(script);
 
