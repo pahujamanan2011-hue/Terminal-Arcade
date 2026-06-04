@@ -756,6 +756,7 @@ function drawPowerUp(p) {
    DRAW
 --------------------------------------------------------- */
 function draw() {
+    if (window.__removeSkeleton) window.__removeSkeleton();
     /* BG – zone tint */
     ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, W, H);
