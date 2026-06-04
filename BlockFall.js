@@ -540,6 +540,7 @@ function drawBlock(px, py, col) {
 --------------------------------------------------------- */
 
 function draw() {
+    if (window.__removeSkeleton) window.__removeSkeleton();
 
     /* BG */
     ctx.fillStyle = "#000";
