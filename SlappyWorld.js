@@ -681,6 +681,7 @@ function drawCol2(c) {
    DRAW
 --------------------------------------------------------- */
 function draw() {
+    if (window.__removeSkeleton) window.__removeSkeleton();
     /* ---- BACKGROUND ---- */
     ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, W, H);
