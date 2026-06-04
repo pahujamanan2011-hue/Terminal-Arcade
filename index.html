@@ -197,16 +197,12 @@
 
 <script>
 /* =========================================================
-   TERMINAL ARCADE — LAUNCHER
-   Core fix: each game registers window.__gameCleanup().
-   goBack() calls it to remove all listeners + DOM nodes
-   before destroying the script. This prevents the blank
-   screen / event listener leak bug.
+   TERMINAL ARCADE — LAUNCHER  (bug-fixed)
    ========================================================= */
 
 var currentScript = null;
+var overlayVisible = false;
 
-/* ---- Landscape helper ---- */
 function requestLandscape() {
     try {
         if (screen.orientation && screen.orientation.lock)
@@ -214,7 +210,6 @@ function requestLandscape() {
     } catch(e){}
 }
 
-/* ---- Help toggle ---- */
 function toggleHelp() {
     var p = document.getElementById("help-panel");
     var t = document.getElementById("help-toggle");
@@ -227,20 +222,18 @@ function toggleHelp() {
     }
 }
 
-/* ---- Terms popup ---- */
 function showTermsPopup() {
     document.getElementById("terms-popup").style.display = "flex";
 }
 function hideTermsPopup() {
     document.getElementById("terms-popup").style.display = "none";
 }
-/* Close popup on backdrop click */
 document.getElementById("terms-popup").addEventListener("click", function(e) {
     if (e.target === this) hideTermsPopup();
 });
 
-/* ---- BACK ---- */
-function goBack() {
+/* ---- cleanupGame: stop loop, remove listeners, clear DOM ---- */
+function cleanupGame() {
 
     /* 1. Stop game loop */
     if (window.__gameInterval) {
@@ -248,49 +241,60 @@ function goBack() {
         window.__gameInterval = null;
     }
 
-    /* 2. Call game's own cleanup (removes its keydown/touch listeners) */
+    /* 2. Call game's cleanup function */
     if (typeof window.__gameCleanup === "function") {
         try { window.__gameCleanup(); } catch(e){}
-        window.__gameCleanup = null;
+        window.__gameCleanup  = null;
     }
+    window.__currentKeydown = null;
+    window.__currentKeyup   = null;
 
-    /* 3. Remove injected D-pad / pause buttons */
+    /* 3. Clear D-pad */
     var dw = document.getElementById("dpad-wrap");
     if (dw) dw.innerHTML = "";
 
-    /* Remove any pause buttons added to overlay-topbar by games */
+    /* 4. Remove injected topbar buttons (pause etc) */
     var topbar = document.getElementById("overlay-topbar");
-    var extraBtns = topbar.querySelectorAll("button:not(#back-btn)");
-    for (var i = 0; i < extraBtns.length; i++) extraBtns[i].remove();
+    if (topbar) {
+        var extra = topbar.querySelectorAll("button:not(#back-btn)");
+        for (var i = 0; i < extra.length; i++) extra[i].remove();
+    }
 
-    /* 4. Remove canvas */
+    /* 5. Clear canvas */
     var cw = document.getElementById("canvas-wrap");
     if (cw) cw.innerHTML = "";
 
-    /* 5. Remove script tag */
+    /* 6. Remove old script tag */
     if (currentScript) {
         currentScript.remove();
         currentScript = null;
     }
+}
 
-    /* 6. Hide overlay */
+/* ---- BACK button ---- */
+function goBack() {
+    cleanupGame();
     document.getElementById("overlay").style.display = "none";
-    document.getElementById("status-msg").textContent = "> No game loaded. Click a game above to play.";
+    overlayVisible = false;
+    document.getElementById("status-msg").textContent =
+        "> No game loaded. Click a game above to play.";
 }
 
 /* ---- LAUNCH ---- */
 function launchGame(file) {
 
-    /* Clean up any previous game first */
-    goBack();
+    /* Always clean up first without hiding overlay if already visible
+       (prevents flash when switching games) */
+    cleanupGame();
 
     /* Show overlay */
     var overlay = document.getElementById("overlay");
     overlay.style.display = "flex";
+    overlayVisible = true;
 
     requestLandscape();
 
-    /* Fresh canvas inside canvas-wrap */
+    /* Create a fresh canvas and put it in canvas-wrap */
     var cw = document.getElementById("canvas-wrap");
     var canvas = document.createElement("canvas");
     canvas.id     = "pong";
@@ -300,11 +304,12 @@ function launchGame(file) {
 
     /* Update title */
     document.getElementById("overlay-title").textContent =
-        file.replace(".js","").replace(/([A-Z])/g," $1").trim().toUpperCase();
+        file.replace(".js", "").replace(/([A-Z])/g, " $1").trim().toUpperCase();
 
-    /* Load game script */
+    /* Load script — append ?t=timestamp so browser ALWAYS re-executes it.
+       Without this, cached scripts don't re-run and the game shows a black screen. */
     var script    = document.createElement("script");
-    script.src    = file;
+    script.src    = file + "?t=" + Date.now();
     currentScript = script;
     document.body.appendChild(script);
 
