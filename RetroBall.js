@@ -361,6 +361,7 @@ function centeredText(txt, y, size) {
 --------------------------------------------------------- */
 
 function draw() {
+    if (window.__removeSkeleton) window.__removeSkeleton();
 
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, W, H);
