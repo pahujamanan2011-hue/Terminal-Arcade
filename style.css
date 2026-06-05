@@ -1,17 +1,15 @@
 /* =========================================================
    TERMINAL ARCADE — style.css
    ========================================================= */
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
     background: #000;
     color: #aaa;
     font-family: monospace;
-    image-rendering: pixelated;
 }
 
-/* ---- MAIN TERMINAL CONTAINER ---- */
+/* MAIN CONTAINER */
 #terminal {
     width: 700px;
     margin: 20px auto;
@@ -19,7 +17,7 @@ html, body {
     background: #050505;
 }
 
-/* ---- TOP BAR ---- */
+/* TOP BAR */
 #topbar {
     padding: 10px 14px;
     border-bottom: 1px solid #1a1a1a;
@@ -30,134 +28,59 @@ html, body {
     letter-spacing: 1px;
 }
 
-/* ---- INTRO ---- */
-#intro {
-    padding: 8px 14px;
-    border-bottom: 1px solid #111;
-    color: #444;
-    font-size: 12px;
-}
+/* INTRO */
+#intro { padding: 8px 14px; border-bottom: 1px solid #111; color: #444; font-size: 12px; }
 #intro p { margin: 2px 0; }
 #intro a { color: #335533; text-decoration: none; }
 #intro a:hover { color: #66aa66; }
 
-/* ---- HELP SECTION ---- */
-#help-bar {
-    padding: 7px 14px;
-    border-bottom: 1px solid #111;
-    cursor: pointer;
-    font-size: 11px;
-    color: #3a5a3a;
-    background: #070707;
-}
+/* HELP */
+#help-bar { padding: 7px 14px; border-bottom: 1px solid #111; cursor: pointer; font-size: 11px; color: #3a5a3a; background: #070707; }
 #help-bar:hover { background: #0d0d0d; color: #55aa55; }
+#help-panel { padding: 10px 14px; border-bottom: 1px solid #111; background: #060606; }
+.help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+.help-item { display: flex; flex-direction: column; padding: 5px 8px; border: 1px solid #111; background: #080808; }
+.help-key { color: #557755; font-size: 10px; margin-bottom: 3px; font-weight: bold; }
+.help-desc { color: #555; font-size: 10px; line-height: 1.5; }
 
-#help-panel {
-    padding: 10px 14px;
-    border-bottom: 1px solid #111;
-    background: #060606;
-}
-.help-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 16px;
-}
-.help-item {
-    display: flex;
-    flex-direction: column;
-    padding: 5px 8px;
-    border: 1px solid #111;
-    background: #080808;
-}
-.help-key {
-    color: #557755;
-    font-size: 10px;
-    margin-bottom: 3px;
-    font-weight: bold;
-}
-.help-desc {
-    color: #555;
-    font-size: 10px;
-    line-height: 1.5;
-}
-
-/* ---- GAME GRID ---- */
+/* GAME GRID */
 #games { padding: 8px; }
-
-.game-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    border: 1px solid #1a1a1a;
-    background: #070707;
-    cursor: pointer;
-    margin-bottom: 6px;
-    transition: background 0.1s;
-}
+.game-card { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid #1a1a1a; background: #070707; cursor: pointer; margin-bottom: 6px; }
 .game-card:hover { background: #0f0f0f; border-color: #333; }
-.game-card:active { background: #141414; }
-
-.game-card img {
-    width: 140px;
-    height: 80px;
-    object-fit: cover;
-    border: 1px solid #222;
-    image-rendering: pixelated;
-    flex-shrink: 0;
-}
+.game-card img { width: 140px; height: 80px; object-fit: cover; border: 1px solid #222; flex-shrink: 0; }
 .game-info h3 { margin: 0 0 4px 0; color: #ccc; font-size: 14px; }
 .game-info p  { margin: 0 0 2px 0; color: #666; font-size: 12px; }
 .game-info .hint { color: #333; font-size: 11px; }
 
-/* ---- STATUS BAR ---- */
-#statusbar {
-    padding: 5px 14px;
-    border-top: 1px solid #111;
-    font-size: 11px;
-    color: #333;
-}
+/* STATUS */
+#statusbar { padding: 5px 14px; border-top: 1px solid #111; font-size: 11px; color: #333; }
 
-/* ---- FOOTER ---- */
-#footer {
-    padding: 8px 14px;
-    border-top: 1px solid #0f0f0f;
-    background: #030303;
-}
-#footer-main {
-    font-size: 11px;
-    color: #2a2a2a;
-    margin-bottom: 3px;
-}
-#footer-links {
-    font-size: 11px;
-    color: #2a2a2a;
-}
+/* FOOTER */
+#footer { padding: 8px 14px; border-top: 1px solid #0f0f0f; background: #030303; }
+#footer-main { font-size: 11px; color: #2a2a2a; margin-bottom: 3px; }
+#footer-links { font-size: 11px; color: #2a2a2a; }
 #footer-links a { color: #335533; text-decoration: none; }
 #footer-links a:hover { color: #66aa66; }
-.footer-link {
-    color: #335533;
-    cursor: pointer;
-    text-decoration: none;
-}
+.footer-link { color: #335533; cursor: pointer; }
 .footer-link:hover { color: #66aa66; }
 
-/* ---- GAME OVERLAY ---- */
+/* =====================================================
+   GAME OVERLAY
+===================================================== */
 #overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     background: #000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-top: 6px;
+    padding-top: 8px;
     z-index: 100;
     overflow-y: auto;
 }
 
-/* ---- OVERLAY TOPBAR ---- */
+/* OVERLAY TOPBAR */
 #overlay-topbar {
     display: flex;
     align-items: center;
@@ -167,178 +90,56 @@ html, body {
     margin-bottom: 6px;
     flex-wrap: wrap;
 }
-
 #back-btn {
-    background: #111;
-    border: 1px solid #333;
-    color: #aaa;
-    font-family: monospace;
-    font-size: 12px;
-    padding: 5px 12px;
-    cursor: pointer;
-    white-space: nowrap;
+    background: #111; border: 1px solid #333; color: #aaa;
+    font-family: monospace; font-size: 12px; padding: 5px 12px; cursor: pointer;
 }
-#back-btn:hover { background: #1e1e1e; border-color: #666; color: #fff; }
-
-#overlay-title {
-    font-size: 12px;
-    color: #333;
-    flex: 1;
-}
-
-/* Pause/util buttons injected by games */
+#back-btn:hover { background: #1e1e1e; color: #fff; }
+#overlay-title { font-size: 12px; color: #333; flex: 1; }
 #overlay-topbar button:not(#back-btn) {
-    background: #111;
-    border: 1px solid #2a2a2a;
-    color: #777;
-    font-family: monospace;
-    font-size: 11px;
-    padding: 5px 10px;
-    cursor: pointer;
+    background: #111; border: 1px solid #2a2a2a; color: #777;
+    font-family: monospace; font-size: 11px; padding: 5px 10px; cursor: pointer;
 }
 #overlay-topbar button:not(#back-btn):hover { background: #1a1a1a; color: #aaa; }
 
-/* ---- CANVAS WRAP ---- */
-#canvas-wrap {
-    width: 640px;
-    max-width: 100%;
-    display: flex;
-    justify-content: center;
-    position: relative;
-    background: #000;
-    overflow: hidden;
-}
-
-/* Skeleton loader */
-#canvas-wrap.loading::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(
-        to bottom,
-        #080808 0px, #080808 18px,
-        #0a0a0a 18px, #0a0a0a 36px
-    );
-    z-index: 1;
-    animation: skeletonPulse 1s ease-in-out infinite;
-    min-height: 360px;
-}
-#canvas-wrap.loading::after {
-    content: "LOADING...";
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: monospace;
-    font-size: 13px;
-    color: #2a2a2a;
-    z-index: 2;
-    letter-spacing: 3px;
-}
-@keyframes skeletonPulse {
-    0%   { opacity: 1; }
-    50%  { opacity: 0.4; }
-    100% { opacity: 1; }
-}
-
-/* Canvas: NEVER set height in CSS. Let width/height attributes define size.
-   DO NOT use height:auto or aspect-ratio — both collapse canvas on old browsers. */
-#canvas-wrap canvas {
+/* THE CANVAS — simple, static, no tricks */
+#pong {
     display: block;
     border: 1px solid #1a1a1a;
+    background: #000;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    background: #000;
-    position: relative;
-    z-index: 3;
-    /* width and height come from the canvas attributes (640x360), not CSS */
+    /* No width/height CSS — let the canvas attributes (640x360) define the size */
 }
 
-/* ---- DPAD WRAP (mobile D-pads injected here) ---- */
+/* D-PAD AREA — below canvas on mobile */
 #dpad-wrap {
     width: 640px;
     max-width: 100%;
+    background: #000;
 }
 
-/* ---- OVERLAY HINT ---- */
-#overlay-hint {
-    margin-top: 5px;
-    font-size: 10px;
-    color: #222;
-    width: 640px;
-    max-width: 100%;
-    text-align: center;
-}
+/* OVERLAY HINT */
+#overlay-hint { margin-top: 5px; font-size: 10px; color: #222; }
 
-/* ---- TERMS POPUP ---- */
-#terms-popup {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-}
-#terms-box {
-    width: 560px;
-    max-width: 95vw;
-    max-height: 80vh;
-    background: #0a0a0a;
-    border: 1px solid #2a2a2a;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-#terms-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    border-bottom: 1px solid #1a1a1a;
-    background: #0f0f0f;
-    font-size: 12px;
-    color: #888;
-}
-#terms-header button {
-    background: none;
-    border: 1px solid #333;
-    color: #666;
-    font-family: monospace;
-    font-size: 13px;
-    padding: 2px 8px;
-    cursor: pointer;
-}
-#terms-header button:hover { color: #aaa; border-color: #666; }
-#terms-body {
-    padding: 14px;
-    overflow-y: auto;
-    font-size: 12px;
-    color: #666;
-    line-height: 1.7;
-}
-#terms-body h3 {
-    color: #888;
-    font-size: 12px;
-    margin: 14px 0 5px;
-    border-bottom: 1px solid #111;
-    padding-bottom: 3px;
-}
-#terms-body p { margin-bottom: 5px; }
-#terms-body code {
-    color: #446644;
-    font-size: 11px;
-    background: #0d0d0d;
-    padding: 1px 4px;
-    border: 1px solid #1a1a1a;
-}
-#terms-body a { color: #446644; text-decoration: none; }
-#terms-body a:hover { color: #66aa66; }
+/* TERMS POPUP */
+#terms-popup { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:200; }
+#terms-box { width:520px; max-width:95vw; max-height:80vh; background:#0a0a0a; border:1px solid #2a2a2a; display:flex; flex-direction:column; overflow:hidden; }
+#terms-header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #1a1a1a; background:#0f0f0f; font-size:12px; color:#888; }
+#terms-header button { background:none; border:1px solid #333; color:#666; font-family:monospace; font-size:13px; padding:2px 8px; cursor:pointer; }
+#terms-header button:hover { color:#aaa; }
+#terms-body { padding:14px; overflow-y:auto; font-size:12px; color:#666; line-height:1.7; }
+#terms-body h3 { color:#888; font-size:12px; margin:14px 0 5px; border-bottom:1px solid #111; padding-bottom:3px; }
+#terms-body p { margin-bottom:5px; }
+#terms-body a { color:#446644; text-decoration:none; }
+#terms-body a:hover { color:#66aa66; }
 
-/* ---- RESPONSIVE ---- */
-@media (max-width: 720px) {
-    #terminal { width: 100%; margin: 0; border: none; }
-    .help-grid { grid-template-columns: 1fr; }
-    #overlay { padding-top: 4px; }
-    #overlay-topbar, #canvas-wrap, #dpad-wrap, #overlay-hint { width: 100%; }
+/* RESPONSIVE */
+@media (max-width:720px) {
+    #terminal { width:100%; margin:0; border:none; }
+    .help-grid { grid-template-columns:1fr; }
+    #overlay { padding-top:4px; }
+    #overlay-topbar { width:100%; }
+    #pong { width:100%; height:auto; }
+    #dpad-wrap { width:100%; }
 }
