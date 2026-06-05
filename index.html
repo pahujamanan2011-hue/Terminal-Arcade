@@ -2,29 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Terminal Arcade</title>
 <meta name="description" content="Play lightweight retro browser games built for old computers. Pong, Snake, Tetris and more. Fast, simple and Linux-friendly.">
-<meta name="keywords" content="retro games, browser games, terminal arcade, lightweight games, pong, snake, tetris, linux games, old computer games">
-<meta name="author" content="Manan Pahuja">
-<meta property="og:title" content="Terminal Arcade">
-<meta property="og:description" content="Play lightweight retro browser games built for old computers.">
-<meta property="og:url" content="https://terminal-arcade.vercel.app">
 <link rel="stylesheet" href="style.css">
+<style>
+    /* Emergency inline styles in case CSS doesn't load */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000; color: #aaa; font-family: monospace; }
+    #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 8px; }
+    #pong { display: block; border: 1px solid #1a1a1a; background: #000; }
+</style>
 </head>
 <body>
 
-<!-- =====================================================
-     MAIN PAGE
-===================================================== -->
 <div id="terminal">
-
     <div id="topbar"><span>TERMINAL ARCADE</span></div>
 
     <div id="intro">
         <p>&gt; Play lightweight browser games built for old PCs and Linux systems.</p>
         <p>&gt; Mobile compatible. No install. No ads.</p>
-        <p>&gt; GitHub: <a href="https://github.com/pahujamanan2011-hue" target="_blank" rel="noopener noreferrer">github.com/pahujamanan2011-hue</a></p>
+        <p>&gt; GitHub: <a href="#" target="_blank">github.com/pahujamanan2011-hue</a></p>
     </div>
 
     <div id="help-bar" onclick="toggleHelp()">
@@ -32,216 +30,696 @@
     </div>
     <div id="help-panel" style="display:none;">
         <div class="help-grid">
-            <div class="help-item"><span class="help-key">RETRO BALL</span><span class="help-desc">W/S or Arrows = move paddle. D = difficulty. First to 5 wins.</span></div>
-            <div class="help-item"><span class="help-key">VOID SERPENT</span><span class="help-desc">WASD or Arrows = steer. Eat apples. Walls wrap around.</span></div>
-            <div class="help-item"><span class="help-key">BLOCKFALL</span><span class="help-desc">A/D = move, W = rotate, S = soft drop, SPACE = instant drop.</span></div>
-            <div class="help-item"><span class="help-key">NIGHT CIRCUIT</span><span class="help-desc">A/D or Arrows = drive. Avoid traffic. Collect power-ups.</span></div>
-            <div class="help-item"><span class="help-key">STARTRAIL</span><span class="help-desc">SPACE / W / Up = jump. Collect fragments. Avoid obstacles.</span></div>
-            <div class="help-item"><span class="help-key">SLAPPY WORLD</span><span class="help-desc">SPACE or tap = flap. Fly through gaps. Collect crystals.</span></div>
-            <div class="help-item"><span class="help-key">SIGNAL LOST</span><span class="help-desc">Click correct answer before timer runs out. 3 mistakes = over.</span></div>
-            <div class="help-item"><span class="help-key">ALL GAMES</span><span class="help-desc">P = pause &nbsp;|&nbsp; F = fullscreen &nbsp;|&nbsp; ESC = menu &nbsp;|&nbsp; BACK = exit</span></div>
+            <div class="help-item"><span class="help-key">RETRO BALL</span><span class="help-desc">W/S or Arrows = move paddle. First to 5 wins.</span></div>
+            <div class="help-item"><span class="help-key">VOID SERPENT</span><span class="help-desc">WASD or Arrows = steer. Eat apples. Wrap around.</span></div>
+            <div class="help-item"><span class="help-key">BLOCKFALL</span><span class="help-desc">A/D = move, W = rotate, S = drop, SPACE = instant.</span></div>
+            <div class="help-item"><span class="help-key">ALL GAMES</span><span class="help-desc">P = pause &nbsp;|&nbsp; ESC = menu &nbsp;|&nbsp; BACK = exit</span></div>
         </div>
     </div>
 
     <div id="games">
-
-        <div class="game-card" onclick="launchGame('VoidSerpent.js')">
-            <img src="VoidSerpent.png" alt="Void Serpent">
-            <div class="game-info"><h3>VOID SERPENT</h3><p>Terminal snake survival system.</p><p class="hint">WASD / Arrows &bull; Power-ups &bull; Wall wrap</p></div>
+        <div class="game-card" onclick="launchGame('retroball')">
+            <div class="game-icon">🎮</div>
+            <div class="game-info"><h3>RETRO BALL</h3><p>Classic terminal pong.</p><p class="hint">W/S or Arrows</p></div>
         </div>
 
-        <div class="game-card" onclick="launchGame('NightCircuit.js')">
-            <img src="NightCircuit.png" alt="Night Circuit">
-            <div class="game-info"><h3>NIGHT CIRCUIT</h3><p>Low-light traffic simulation.</p><p class="hint">A/D or Arrows &bull; NOS &bull; Turbo &bull; Coins</p></div>
+        <div class="game-card" onclick="launchGame('snake')">
+            <div class="game-icon">🐍</div>
+            <div class="game-info"><h3>VOID SERPENT</h3><p>Terminal snake survival.</p><p class="hint">WASD / Arrows</p></div>
         </div>
 
-        <div class="game-card" onclick="launchGame('BlockFall.js')">
-            <img src="BlockFall.png" alt="BlockFall">
-            <div class="game-info"><h3>BLOCKFALL</h3><p>Classic terminal block puzzle.</p><p class="hint">WASD / Arrows &bull; SPACE = instant drop</p></div>
+        <div class="game-card" onclick="launchGame('tetris')">
+            <div class="game-icon">🧩</div>
+            <div class="game-info"><h3>BLOCKFALL</h3><p>Classic block puzzle.</p><p class="hint">A/D/W/S/SPACE</p></div>
         </div>
-
-        <div class="game-card" onclick="launchGame('SignalLost.js')">
-            <img src="SignalLost.png" alt="Signal Lost">
-            <div class="game-info"><h3>SIGNAL LOST</h3><p>A terminal survival mystery.</p><p class="hint">Click answers &bull; Beat the clock &bull; Story</p></div>
-        </div>
-
-        <div class="game-card" onclick="launchGame('SlappyWorld.js')">
-            <img src="SlappyWorld.png" alt="Slappy World">
-            <div class="game-info"><h3>SLAPPY WORLD</h3><p>Terminal flight protocol.</p><p class="hint">SPACE / tap = flap &bull; Collect crystals</p></div>
-        </div>
-
-        <div class="game-card" onclick="launchGame('RetroBall.js')">
-            <img src="RetroBall.png" alt="Retro Ball">
-            <div class="game-info"><h3>RETRO BALL</h3><p>Classic terminal pong. Beat the CPU.</p><p class="hint">W/S or Arrows &bull; D = difficulty</p></div>
-        </div>
-
-        <div class="game-card" onclick="launchGame('StarTrail.js')">
-            <img src="StarTrail.png" alt="StarTrail">
-            <div class="game-info"><h3>STARTRAIL</h3><p>Endless runner protocol.</p><p class="hint">SPACE / W / Up = jump &bull; Power-ups</p></div>
-        </div>
-
     </div>
 
     <div id="statusbar"><span id="status-msg">&gt; No game loaded. Click a game above to play.</span></div>
 
     <div id="footer">
-        <div id="footer-main">Terminal Arcade v1.0 &nbsp;&bull;&nbsp; Retro games for modern browsers.</div>
+        <div id="footer-main">Terminal Arcade v2.0 &nbsp;&bull;&nbsp; Retro games for modern browsers.</div>
         <div id="footer-links">
-            <span class="footer-link" onclick="showTermsPopup()">Terms</span> &nbsp;&bull;&nbsp;
-            <span class="footer-link" onclick="showTermsPopup()">Privacy</span> &nbsp;&bull;&nbsp;
-            <a href="mailto:pahujamanan2011@gmail.com">pahujamanan2011@gmail.com</a> &nbsp;&bull;&nbsp;
-            &copy; Manan Pahuja
+            <span class="footer-link" onclick="showTerms()">Terms</span> &nbsp;&bull;&nbsp;
+            <span class="footer-link" onclick="showTerms()">Privacy</span> &nbsp;&bull;&nbsp;
+            <a href="mailto:terminal@arcade.com">terminal@arcade.com</a>
         </div>
     </div>
-
 </div>
 
-<!-- =====================================================
-     GAME OVERLAY
-     The canvas LIVES HERE PERMANENTLY in the HTML.
-     Games always find it with getElementById("pong").
-     We never remove or recreate it — just reset it.
-===================================================== -->
 <div id="overlay" style="display:none;">
-
     <div id="overlay-topbar">
-        <button id="back-btn" onclick="goBack()">&#8592; BACK</button>
+        <button id="back-btn" onclick="closeGame()">← BACK</button>
         <span id="overlay-title"></span>
     </div>
-
-    <!-- THE CANVAS IS STATIC — always in DOM, never removed -->
-    <canvas id="pong" width="640" height="360"></canvas>
-
-    <!-- D-pad buttons injected here by games on mobile -->
-    <div id="dpad-wrap"></div>
-
-    <div id="overlay-hint">P = pause &nbsp;|&nbsp; F = fullscreen &nbsp;|&nbsp; ESC = menu</div>
-
+    <canvas id="game-canvas" width="800" height="500"></canvas>
+    <div id="overlay-hint">ESC = menu &nbsp;|&nbsp; BACK = exit</div>
 </div>
 
-<!-- TERMS POPUP -->
 <div id="terms-popup" style="display:none;">
     <div id="terms-box">
         <div id="terms-header">
-            <span>TERMINAL ARCADE — TERMS &amp; PRIVACY</span>
-            <button onclick="hideTermsPopup()">&#x2715;</button>
+            <span>TERMINAL ARCADE — TERMS</span>
+            <button onclick="closeTerms()">✕</button>
         </div>
         <div id="terms-body">
             <h3>Terms of Use</h3>
-            <p>1. Games are provided as-is for personal, non-commercial use.</p>
-            <p>2. High scores stored locally in your browser only.</p>
-            <p>3. No personal data collected or transmitted.</p>
-            <p>4. No account registration required.</p>
-            <p>5. No purchases or gambling.</p>
-            <p>6. Copyright remains with Manan Pahuja.</p>
-            <h3>Privacy</h3>
-            <p>No accounts. No tracking. No ads. Local storage only for high scores.</p>
-            <h3>Contact</h3>
-            <p><a href="mailto:pahujamanan2011@gmail.com">pahujamanan2011@gmail.com</a></p>
+            <p>Games are provided as-is for personal use.</p>
+            <p>No personal data collected.</p>
+            <p>Copyright © Terminal Arcade</p>
         </div>
     </div>
 </div>
 
 <script>
-var currentScript = null;
+let currentGame = null;
+let gameInterval = null;
 
-/* --- helpers --- */
-function requestLandscape() {
-    try {
-        if (screen.orientation && screen.orientation.lock)
-            screen.orientation.lock("landscape").catch(function(){});
-    } catch(e){}
-}
 function toggleHelp() {
-    var p = document.getElementById("help-panel");
-    var t = document.getElementById("help-toggle");
-    var open = p.style.display !== "none";
-    p.style.display = open ? "none" : "block";
-    t.textContent = (open ? "> HOW TO PLAY  [click to expand]" : "> HOW TO PLAY  [click to collapse]");
+    const panel = document.getElementById("help-panel");
+    const toggle = document.getElementById("help-toggle");
+    const isVisible = panel.style.display !== "none";
+    panel.style.display = isVisible ? "none" : "block";
+    toggle.textContent = isVisible ? "> HOW TO PLAY  [click to expand]" : "> HOW TO PLAY  [click to collapse]";
 }
-function showTermsPopup() { document.getElementById("terms-popup").style.display = "flex"; }
-function hideTermsPopup()  { document.getElementById("terms-popup").style.display = "none"; }
-document.getElementById("terms-popup").addEventListener("click", function(e){
-    if (e.target === this) hideTermsPopup();
-});
 
-/* --- BACK --- */
-function goBack() {
-    /* Stop game loop */
-    if (window.__gameInterval) {
-        clearInterval(window.__gameInterval);
-        window.__gameInterval = null;
+function showTerms() {
+    document.getElementById("terms-popup").style.display = "flex";
+}
+
+function closeTerms() {
+    document.getElementById("terms-popup").style.display = "none";
+}
+
+function closeGame() {
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
     }
-    /* Remove keyboard listeners added by game */
-    if (window.__currentKeydown) {
-        document.removeEventListener("keydown", window.__currentKeydown);
-        window.__currentKeydown = null;
+    if (currentGame && typeof currentGame.cleanup === 'function') {
+        currentGame.cleanup();
     }
-    if (window.__currentKeyup) {
-        document.removeEventListener("keyup", window.__currentKeyup);
-        window.__currentKeyup = null;
-    }
-    /* Run any extra game cleanup */
-    if (typeof window.__gameCleanup === "function") {
-        try { window.__gameCleanup(); } catch(e){}
-        window.__gameCleanup = null;
-    }
-    /* Clear D-pad buttons */
-    document.getElementById("dpad-wrap").innerHTML = "";
-    /* Remove topbar buttons added by game */
-    var tb = document.getElementById("overlay-topbar");
-    var extras = tb.querySelectorAll("button:not(#back-btn)");
-    for (var i = 0; i < extras.length; i++) extras[i].remove();
-    /* Clear the canvas */
-    var canvas = document.getElementById("pong");
-    var ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    /* Remove old script */
-    if (currentScript) { currentScript.remove(); currentScript = null; }
-    /* Hide overlay */
     document.getElementById("overlay").style.display = "none";
     document.getElementById("status-msg").textContent = "> No game loaded. Click a game above to play.";
+    currentGame = null;
 }
 
-/* --- LAUNCH --- */
-function launchGame(file) {
-    /* Clean up previous game */
-    goBack();
-
-    requestLandscape();
-
-    /* Show overlay — canvas is already there, always has been */
-    document.getElementById("overlay").style.display = "flex";
-    document.getElementById("overlay-title").textContent =
-        file.replace(".js","").replace(/([A-Z])/g," $1").trim().toUpperCase();
-
-    /* Draw a "loading" message on the canvas while script loads */
-    var canvas = document.getElementById("pong");
-    var ctx = canvas.getContext("2d");
+function launchGame(gameId) {
+    closeGame();
+    
+    const canvas = document.getElementById("game-canvas");
+    const ctx = canvas.getContext("2d");
+    
+    // Show loading
     ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, 640, 360);
-    ctx.fillStyle = "#333";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#33ff33";
     ctx.font = "14px monospace";
-    ctx.fillText("LOADING...", 280, 185);
+    ctx.fillText("LOADING GAME...", canvas.width/2 - 70, canvas.height/2);
+    
+    document.getElementById("overlay").style.display = "flex";
+    document.getElementById("overlay-title").textContent = gameId.toUpperCase();
+    document.getElementById("status-msg").textContent = "> Running: " + gameId;
+    
+    // Initialize game based on selection
+    setTimeout(() => {
+        if (gameId === 'retroball') {
+            currentGame = new RetroBall(canvas);
+        } else if (gameId === 'snake') {
+            currentGame = new SnakeGame(canvas);
+        } else if (gameId === 'tetris') {
+            currentGame = new TetrisGame(canvas);
+        }
+        
+        if (currentGame && typeof currentGame.start === 'function') {
+            currentGame.start();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                if (currentGame && typeof currentGame.update === 'function') {
+                    currentGame.update();
+                }
+            }, 1000/60);
+        }
+    }, 100);
+}
 
-    /* Load the game script — cache-bust so it always re-executes */
-    var script = document.createElement("script");
-    script.src = file + "?t=" + Date.now();
-    script.onerror = function() {
-        var ctx2 = document.getElementById("pong").getContext("2d");
-        ctx2.fillStyle = "#000"; ctx2.fillRect(0,0,640,360);
-        ctx2.fillStyle = "#c03030"; ctx2.font = "13px monospace";
-        ctx2.fillText("ERROR: could not load " + file, 60, 185);
-        ctx2.fillStyle = "#555"; ctx2.font = "11px monospace";
-        ctx2.fillText("Make sure the file is in the same folder as index.html", 60, 210);
-    };
-    currentScript = script;
-    document.body.appendChild(script);
+// Handle ESC key
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && document.getElementById("overlay").style.display === "flex") {
+        closeGame();
+    }
+});
 
-    document.getElementById("status-msg").textContent = "> Running: " + file;
+// Close terms popup when clicking outside
+document.getElementById("terms-popup").addEventListener("click", function(e) {
+    if (e.target === this) closeTerms();
+});
+</script>
+
+<!-- GAME: RETRO BALL (Pong) -->
+<script>
+class RetroBall {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.W = canvas.width;
+        this.H = canvas.height;
+        
+        this.playerY = this.H/2 - 35;
+        this.cpuY = this.H/2 - 35;
+        this.playerScore = 0;
+        this.cpuScore = 0;
+        this.ballX = this.W/2;
+        this.ballY = this.H/2;
+        this.ballVX = 4;
+        this.ballVY = 2;
+        this.winScore = 5;
+        this.gameOver = false;
+        this.up = false;
+        this.down = false;
+        
+        this.keys = this.handleKeys.bind(this);
+        document.addEventListener("keydown", this.keys);
+        document.addEventListener("keyup", this.keys);
+    }
+    
+    handleKeys(e) {
+        const key = e.code;
+        if (key === "ArrowUp" || key === "KeyW") {
+            this.up = e.type === "keydown";
+            e.preventDefault();
+        }
+        if (key === "ArrowDown" || key === "KeyS") {
+            this.down = e.type === "keydown";
+            e.preventDefault();
+        }
+        if (key === "Space" && this.gameOver && e.type === "keydown") {
+            this.resetGame();
+            e.preventDefault();
+        }
+    }
+    
+    start() {
+        this.resetGame();
+    }
+    
+    resetGame() {
+        this.playerScore = 0;
+        this.cpuScore = 0;
+        this.gameOver = false;
+        this.resetBall();
+    }
+    
+    resetBall() {
+        this.ballX = this.W/2;
+        this.ballY = this.H/2;
+        this.ballVX = (Math.random() < 0.5) ? 4 : -4;
+        this.ballVY = (Math.random() * 4) - 2;
+        if (this.ballVY === 0) this.ballVY = 2;
+    }
+    
+    update() {
+        if (this.gameOver) {
+            this.draw();
+            return;
+        }
+        
+        // Move player paddle
+        if (this.up) this.playerY -= 6;
+        if (this.down) this.playerY += 6;
+        this.playerY = Math.max(0, Math.min(this.playerY, this.H - 70));
+        
+        // Simple CPU AI
+        const cpuCenter = this.cpuY + 35;
+        if (cpuCenter < this.ballY - 20) this.cpuY += 3.5;
+        if (cpuCenter > this.ballY + 20) this.cpuY -= 3.5;
+        this.cpuY = Math.max(0, Math.min(this.cpuY, this.H - 70));
+        
+        // Move ball
+        this.ballX += this.ballVX;
+        this.ballY += this.ballVY;
+        
+        // Wall collision
+        if (this.ballY <= 0 || this.ballY >= this.H - 8) {
+            this.ballVY = -this.ballVY;
+            this.ballY = Math.max(0, Math.min(this.ballY, this.H - 8));
+        }
+        
+        // Player paddle collision
+        if (this.ballVX < 0 && this.ballX <= 20 && this.ballX >= 10 &&
+            this.ballY + 8 >= this.playerY && this.ballY <= this.playerY + 70) {
+            this.ballVX = -this.ballVX;
+            this.ballX = 21;
+            const hitPos = (this.ballY - this.playerY) / 70;
+            this.ballVY = (hitPos - 0.5) * 8;
+        }
+        
+        // CPU paddle collision
+        if (this.ballVX > 0 && this.ballX + 8 >= this.W - 20 && this.ballX <= this.W - 10 &&
+            this.ballY + 8 >= this.cpuY && this.ballY <= this.cpuY + 70) {
+            this.ballVX = -this.ballVX;
+            this.ballX = this.W - 21;
+            const hitPos = (this.ballY - this.cpuY) / 70;
+            this.ballVY = (hitPos - 0.5) * 8;
+        }
+        
+        // Scoring
+        if (this.ballX < 0) {
+            this.cpuScore++;
+            if (this.cpuScore >= this.winScore) this.gameOver = true;
+            else this.resetBall();
+        } else if (this.ballX > this.W) {
+            this.playerScore++;
+            if (this.playerScore >= this.winScore) this.gameOver = true;
+            else this.resetBall();
+        }
+        
+        this.draw();
+    }
+    
+    draw() {
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(0, 0, this.W, this.H);
+        
+        // Center line
+        this.ctx.fillStyle = "#1a1a1a";
+        for (let i = 0; i < this.H; i += 30) {
+            this.ctx.fillRect(this.W/2 - 2, i, 4, 15);
+        }
+        
+        // Paddles
+        this.ctx.fillStyle = "#4a4a4a";
+        this.ctx.fillRect(10, this.playerY, 8, 70);
+        this.ctx.fillRect(this.W - 18, this.cpuY, 8, 70);
+        
+        // Ball
+        this.ctx.fillStyle = "#fff";
+        this.ctx.fillRect(this.ballX, this.ballY, 8, 8);
+        
+        // Scores
+        this.ctx.font = "24px monospace";
+        this.ctx.fillStyle = "#666";
+        this.ctx.fillText(this.playerScore, this.W/2 - 60, 40);
+        this.ctx.fillText(this.cpuScore, this.W/2 + 40, 40);
+        
+        // Game over
+        if (this.gameOver) {
+            this.ctx.fillStyle = "rgba(0,0,0,0.7)";
+            this.ctx.fillRect(0, 0, this.W, this.H);
+            this.ctx.fillStyle = "#4a4a4a";
+            this.ctx.font = "20px monospace";
+            const msg = this.playerScore > this.cpuScore ? "YOU WIN!" : "GAME OVER";
+            const text = this.ctx.measureText(msg);
+            this.ctx.fillText(msg, this.W/2 - text.width/2, this.H/2);
+            this.ctx.font = "12px monospace";
+            const sub = "Press SPACE to play again";
+            const subText = this.ctx.measureText(sub);
+            this.ctx.fillText(sub, this.W/2 - subText.width/2, this.H/2 + 40);
+        }
+    }
+    
+    cleanup() {
+        document.removeEventListener("keydown", this.keys);
+        document.removeEventListener("keyup", this.keys);
+    }
 }
 </script>
 
+<!-- GAME: VOID SERPENT (Snake) -->
+<script>
+class SnakeGame {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.W = canvas.width;
+        this.H = canvas.height;
+        this.cellSize = 20;
+        this.cols = Math.floor(this.W / this.cellSize);
+        this.rows = Math.floor(this.H / this.cellSize);
+        
+        this.snake = [{x: 10, y: 10}];
+        this.direction = "RIGHT";
+        this.nextDirection = "RIGHT";
+        this.food = this.randomFood();
+        this.score = 0;
+        this.gameOver = false;
+        
+        this.keys = this.handleKeys.bind(this);
+        document.addEventListener("keydown", this.keys);
+    }
+    
+    randomFood() {
+        return {
+            x: Math.floor(Math.random() * this.cols),
+            y: Math.floor(Math.random() * this.rows)
+        };
+    }
+    
+    handleKeys(e) {
+        const key = e.code;
+        const dirs = {
+            "ArrowUp": "UP", "KeyW": "UP",
+            "ArrowDown": "DOWN", "KeyS": "DOWN",
+            "ArrowLeft": "LEFT", "KeyA": "LEFT",
+            "ArrowRight": "RIGHT", "KeyD": "RIGHT"
+        };
+        
+        if (dirs[key]) {
+            const newDir = dirs[key];
+            const opposite = {
+                "UP": "DOWN", "DOWN": "UP", "LEFT": "RIGHT", "RIGHT": "LEFT"
+            };
+            if (opposite[newDir] !== this.direction) {
+                this.nextDirection = newDir;
+            }
+            e.preventDefault();
+        }
+        
+        if (key === "Space" && this.gameOver && e.type === "keydown") {
+            this.resetGame();
+            e.preventDefault();
+        }
+    }
+    
+    start() {
+        this.resetGame();
+    }
+    
+    resetGame() {
+        this.snake = [{x: 10, y: 10}];
+        this.direction = "RIGHT";
+        this.nextDirection = "RIGHT";
+        this.score = 0;
+        this.gameOver = false;
+        this.food = this.randomFood();
+    }
+    
+    update() {
+        if (this.gameOver) {
+            this.draw();
+            return;
+        }
+        
+        this.direction = this.nextDirection;
+        
+        // Move snake
+        const head = {...this.snake[0]};
+        switch(this.direction) {
+            case "UP": head.y--; break;
+            case "DOWN": head.y++; break;
+            case "LEFT": head.x--; break;
+            case "RIGHT": head.x++; break;
+        }
+        
+        // Wrap around walls
+        if (head.x < 0) head.x = this.cols - 1;
+        if (head.x >= this.cols) head.x = 0;
+        if (head.y < 0) head.y = this.rows - 1;
+        if (head.y >= this.rows) head.y = 0;
+        
+        // Check food collision
+        const ateFood = head.x === this.food.x && head.y === this.food.y;
+        
+        this.snake.unshift(head);
+        if (!ateFood) {
+            this.snake.pop();
+        } else {
+            this.score++;
+            this.food = this.randomFood();
+        }
+        
+        // Check self collision
+        for (let i = 1; i < this.snake.length; i++) {
+            if (this.snake[i].x === head.x && this.snake[i].y === head.y) {
+                this.gameOver = true;
+                break;
+            }
+        }
+        
+        this.draw();
+    }
+    
+    draw() {
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(0, 0, this.W, this.H);
+        
+        // Draw snake
+        this.ctx.fillStyle = "#4a4a4a";
+        for (let segment of this.snake) {
+            this.ctx.fillRect(segment.x * this.cellSize, segment.y * this.cellSize, 
+                            this.cellSize - 1, this.cellSize - 1);
+        }
+        
+        // Draw food
+        this.ctx.fillStyle = "#33ff33";
+        this.ctx.fillRect(this.food.x * this.cellSize, this.food.y * this.cellSize,
+                         this.cellSize - 1, this.cellSize - 1);
+        
+        // Score
+        this.ctx.font = "16px monospace";
+        this.ctx.fillStyle = "#666";
+        this.ctx.fillText("SCORE: " + this.score, 10, 25);
+        
+        // Game over
+        if (this.gameOver) {
+            this.ctx.fillStyle = "rgba(0,0,0,0.7)";
+            this.ctx.fillRect(0, 0, this.W, this.H);
+            this.ctx.fillStyle = "#4a4a4a";
+            this.ctx.font = "20px monospace";
+            const msg = "GAME OVER";
+            const text = this.ctx.measureText(msg);
+            this.ctx.fillText(msg, this.W/2 - text.width/2, this.H/2);
+            this.ctx.font = "12px monospace";
+            const sub = "Press SPACE to play again";
+            const subText = this.ctx.measureText(sub);
+            this.ctx.fillText(sub, this.W/2 - subText.width/2, this.H/2 + 40);
+        }
+    }
+    
+    cleanup() {
+        document.removeEventListener("keydown", this.keys);
+    }
+}
+</script>
+
+<!-- GAME: BLOCKFALL (Tetris) -->
+<script>
+class TetrisGame {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.W = canvas.width;
+        this.H = canvas.height;
+        this.cellSize = 25;
+        this.cols = 10;
+        this.rows = 20;
+        this.board = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        
+        this.shapes = [
+            [[1,1,1,1]],
+            [[1,1],[1,1]],
+            [[0,1,0],[1,1,1]],
+            [[1,0,0],[1,1,1]],
+            [[0,0,1],[1,1,1]]
+        ];
+        
+        this.currentPiece = this.randomPiece();
+        this.currentX = Math.floor(this.cols/2) - 1;
+        this.currentY = 0;
+        this.score = 0;
+        this.gameOver = false;
+        this.dropCounter = 0;
+        this.dropInterval = 30;
+        
+        this.keys = this.handleKeys.bind(this);
+        document.addEventListener("keydown", this.keys);
+    }
+    
+    randomPiece() {
+        const shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
+        return JSON.parse(JSON.stringify(shape));
+    }
+    
+    handleKeys(e) {
+        const key = e.code;
+        if (this.gameOver && key === "Space") {
+            this.resetGame();
+            e.preventDefault();
+            return;
+        }
+        if (this.gameOver) return;
+        
+        switch(key) {
+            case "KeyA": case "ArrowLeft":
+                this.movePiece(-1, 0);
+                e.preventDefault();
+                break;
+            case "KeyD": case "ArrowRight":
+                this.movePiece(1, 0);
+                e.preventDefault();
+                break;
+            case "KeyW": case "ArrowUp":
+                this.rotatePiece();
+                e.preventDefault();
+                break;
+            case "KeyS": case "ArrowDown":
+                this.movePiece(0, 1);
+                e.preventDefault();
+                break;
+            case "Space":
+                while(this.movePiece(0, 1)) {}
+                e.preventDefault();
+                break;
+        }
+    }
+    
+    movePiece(dx, dy) {
+        this.currentX += dx;
+        this.currentY += dy;
+        if (this.collision()) {
+            this.currentX -= dx;
+            this.currentY -= dy;
+            if (dy === 1) this.lockPiece();
+            return false;
+        }
+        return true;
+    }
+    
+    rotatePiece() {
+        const rotated = this.currentPiece[0].map((_, i) => 
+            this.currentPiece.map(row => row[i]).reverse()
+        );
+        const original = this.currentPiece;
+        this.currentPiece = rotated;
+        if (this.collision()) {
+            this.currentPiece = original;
+        }
+    }
+    
+    collision() {
+        for (let y = 0; y < this.currentPiece.length; y++) {
+            for (let x = 0; x < this.currentPiece[y].length; x++) {
+                if (this.currentPiece[y][x]) {
+                    const boardX = this.currentX + x;
+                    const boardY = this.currentY + y;
+                    if (boardX < 0 || boardX >= this.cols || 
+                        boardY >= this.rows || 
+                        (boardY >= 0 && this.board[boardY][boardX])) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    lockPiece() {
+        for (let y = 0; y < this.currentPiece.length; y++) {
+            for (let x = 0; x < this.currentPiece[y].length; x++) {
+                if (this.currentPiece[y][x]) {
+                    const boardY = this.currentY + y;
+                    const boardX = this.currentX + x;
+                    if (boardY >= 0) {
+                        this.board[boardY][boardX] = 1;
+                    }
+                }
+            }
+        }
+        
+        // Clear lines
+        for (let y = this.rows-1; y >= 0; y--) {
+            if (this.board[y].every(cell => cell === 1)) {
+                this.board.splice(y, 1);
+                this.board.unshift(Array(this.cols).fill(0));
+                this.score += 100;
+                y++;
+            }
+        }
+        
+        this.currentPiece = this.randomPiece();
+        this.currentX = Math.floor(this.cols/2) - 1;
+        this.currentY = 0;
+        
+        if (this.collision()) {
+            this.gameOver = true;
+        }
+    }
+    
+    start() {
+        this.resetGame();
+    }
+    
+    resetGame() {
+        this.board = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        this.score = 0;
+        this.gameOver = false;
+        this.currentPiece = this.randomPiece();
+        this.currentX = Math.floor(this.cols/2) - 1;
+        this.currentY = 0;
+    }
+    
+    update() {
+        if (!this.gameOver) {
+            this.dropCounter++;
+            if (this.dropCounter >= this.dropInterval) {
+                this.movePiece(0, 1);
+                this.dropCounter = 0;
+            }
+        }
+        this.draw();
+    }
+    
+    draw() {
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(0, 0, this.W, this.H);
+        
+        // Draw board
+        for (let y = 0; y < this.rows; y++) {
+            for (let x = 0; x < this.cols; x++) {
+                if (this.board[y][x]) {
+                    this.ctx.fillStyle = "#4a4a4a";
+                    this.ctx.fillRect(x * this.cellSize, y * this.cellSize, 
+                                    this.cellSize - 1, this.cellSize - 1);
+                }
+            }
+        }
+        
+        // Draw current piece
+        this.ctx.fillStyle = "#33ff33";
+        for (let y = 0; y < this.currentPiece.length; y++) {
+            for (let x = 0; x < this.currentPiece[y].length; x++) {
+                if (this.currentPiece[y][x]) {
+                    this.ctx.fillRect((this.currentX + x) * this.cellSize, 
+                                    (this.currentY + y) * this.cellSize,
+                                    this.cellSize - 1, this.cellSize - 1);
+                }
+            }
+        }
+        
+        // Score
+        this.ctx.font = "16px monospace";
+        this.ctx.fillStyle = "#666";
+        this.ctx.fillText("SCORE: " + this.score, this.W - 120, 30);
+        
+        // Game over
+        if (this.gameOver) {
+            this.ctx.fillStyle = "rgba(0,0,0,0.7)";
+            this.ctx.fillRect(0, 0, this.W, this.H);
+            this.ctx.fillStyle = "#4a4a4a";
+            this.ctx.font = "20px monospace";
+            const msg = "GAME OVER";
+            const text = this.ctx.measureText(msg);
+            this.ctx.fillText(msg, this.W/2 - text.width/2, this.H/2);
+            this.ctx.font = "12px monospace";
+            const sub = "Press SPACE to play again";
+            const subText = this.ctx.measureText(sub);
+            this.ctx.fillText(sub, this.W/2 - subText.width/2, this.H/2 + 40);
+        }
+    }
+    
+    cleanup() {
+        document.removeEventListener("keydown", this.keys);
+    }
+}
+</script>
 </body>
 </html>
