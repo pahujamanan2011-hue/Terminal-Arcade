@@ -13,9 +13,68 @@
 /* ---------------------------------------------------------
    CANVAS
 --------------------------------------------------------- */
+function launchGame(file) {
+    /* Clean up previous game */
+    goBack();
 
-var canvas = document.getElementById("pong");
-var ctx    = canvas.getContext("2d", { alpha: false });
+    requestLandscape();
+
+    /* Show overlay */
+    document.getElementById("overlay").style.display = "flex";
+    document.getElementById("overlay-title").textContent =
+        file.replace(".js","").replace(/([A-Z])/g," $1").trim().toUpperCase();
+
+    /* Clear canvas and show loading */
+    var canvas = document.getElementById("pong");
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 640, 360);
+    ctx.fillStyle = "#333";
+    ctx.font = "14px monospace";
+    ctx.fillText("LOADING...", 280, 185);
+
+    /* Load the game script */
+    var script = document.createElement("script");
+    script.src = file + "?t=" + Date.now();
+    
+    // FIX: Remove any existing game interval first
+    if (window.__gameInterval) {
+        clearInterval(window.__gameInterval);
+        window.__gameInterval = null;
+    }
+    
+    script.onload = function() {
+        // Give the game a moment to initialize
+        setTimeout(function() {
+            // Clear the loading message
+            var canvas2 = document.getElementById("pong");
+            var ctx2 = canvas2.getContext("2d");
+            ctx2.fillStyle = "#000";
+            ctx2.fillRect(0, 0, 640, 360);
+            
+            // If the game has its own draw function, it will now take over
+            console.log(file + " loaded successfully");
+        }, 50);
+    };
+    
+    script.onerror = function() {
+        var canvas2 = document.getElementById("pong");
+        var ctx2 = canvas2.getContext("2d");
+        ctx2.fillStyle = "#000"; 
+        ctx2.fillRect(0,0,640,360);
+        ctx2.fillStyle = "#c03030"; 
+        ctx2.font = "13px monospace";
+        ctx2.fillText("ERROR: could not load " + file, 60, 185);
+        ctx2.fillStyle = "#555"; 
+        ctx2.font = "11px monospace";
+        ctx2.fillText("Make sure the file exists in the same folder", 60, 210);
+    };
+    
+    currentScript = script;
+    document.body.appendChild(script);
+
+    document.getElementById("status-msg").textContent = "> Running: " + file;
+}
 
 var W = canvas.width;
 var H = canvas.height;
